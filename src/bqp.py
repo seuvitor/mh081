@@ -1,3 +1,8 @@
+from numpy import *
+import random
+from os.path import basename, splitext
+
+
 def get_problem_optimization_sense():
     MIN = -1
     MAX = 1
@@ -16,8 +21,7 @@ def get_problem_name():
 def generate_random_solution(instance_data):
     (num_vars, Q) = instance_data
 
-    from random import random
-    random_solution = [(1 if (random() > 0.5) else 0) for i in range(num_vars)]
+    random_solution = [(1 if (random.random() > 0.5) else 0) for i in range(num_vars)]
 
     return random_solution
 
@@ -27,6 +31,22 @@ def read_instance_data(file):
     [num_vars, num_non_zero] = line.split()
     num_vars, num_non_zero = eval(num_vars), eval(num_non_zero)
 
+    """
+    A = array([[0,   1,  2,  3],   # initialize 2-d array
+               [4,   5,  6,  7],
+               [8,   9, 10, 11],
+               [12, 13, 14, 15]], dtype=int)
+               
+    mz = zeros((num_vars, num_vars), dtype=int)
+               
+    b = array([2,2,2,2])
+    
+    print 'numpy vector b:\n', b
+    print 'numpy 2d array A:\n', A
+    
+    print 'Ab:\n', dot(A,b)
+    """
+    
     # Create n*n matrix filled with zeroes
     Q = [[0 for i in range(num_vars)] for i in range(num_vars)]
     
@@ -47,7 +67,6 @@ def read_instance_data(file):
     
 
 def read_problem_set_file(file_path):
-    from os.path import basename, splitext
     (problem_set_name, ext) = splitext(basename(file_path))
     
     file = open(file_path, 'r')
@@ -156,11 +175,8 @@ def generate_neighbour(solution, instance_data):
     (num_vars, Q) = instance_data
     
     # Get random index for alternating binary value
-    from random import randint
-    i = randint(0, (num_vars - 1))
+    i = random.randint(0, (num_vars - 1))
     
-    x_i = solution[i]
-
     # Calculate impact of alternating x_i
     sum_i = Q[i][i]
     for j in range(num_vars):
@@ -168,9 +184,10 @@ def generate_neighbour(solution, instance_data):
             sum_i += solution[j] * 2 * Q[i][j]
 
     # Copy current solution to the neighbour solution
-    neighbour = [x for x in solution]
+    neighbour = list(solution)
     
     # Alternate value of x_i and set the delta accordingly
-    (neighbour[i], delta) = (1, sum_i) if (x_i == 0) else (0, -sum_i)
+    (neighbour[i], delta) = (1, sum_i) if (solution[i] == 0) else (0, -sum_i)
 
     return (neighbour, delta)
+    

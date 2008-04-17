@@ -2,7 +2,7 @@ REPORTS_DIR = './reports/'
 LIB_DIR = './lib'
 
 INFINITY = 1e300000
-DEFAULT_NUM_ITERATIONS = 1000
+DEFAULT_NUM_ITERATIONS = 10000
 DEFAULT_NUM_SIMULATIONS = 100
 
 import sys
@@ -10,17 +10,20 @@ from os.path import abspath
 sys.path.append(abspath(LIB_DIR))
 
 from pylab import *
-
+from datetime import datetime
+from os import listdir
+from os.path import basename, splitext
+from time import time
+from numpy import *
+import random
 
 def estimate_median_delta(instance_data):
     delta_sample = []
     
-    from random import random
-    
-    for i in range(20):
+    for i in range(40):
         solution = generate_random_solution(instance_data)
 
-        for j in range(20):
+        for j in range(10):
             (neighbour, delta) = generate_neighbour(solution, instance_data)
             delta_sample.append(abs(delta))
         
@@ -28,32 +31,6 @@ def estimate_median_delta(instance_data):
     median_delta = delta_sample[len(delta_sample) / 2]
     return median_delta
     
-
-def calculate_simulation_params(median_delta):
-    num_iterations = DEFAULT_NUM_ITERATIONS
-    
-    from math import log
-
-    T_max = 1.0
-    T_min = 0.01
-    
-    COOLING_RATE_OPTIONS = [0.99999, 0.99995, 0.9999, 0.9995, 0.999, 0.995, 0.99, 0.95, 0.9]
-    
-    best_cooling_rate = 1.0
-    min_diff = INFINITY
-    
-    for rate in COOLING_RATE_OPTIONS:
-        t = T_max
-        for i in range((num_iterations * 3) / 4): t = (t * rate)
-            
-        diff = abs(t - T_min)
-        
-        if diff < min_diff:
-            min_diff = diff
-            best_cooling_rate = rate
-    
-    return (num_iterations, T_max, best_cooling_rate, median_delta)
-
 
 def report_results(instance_name, results, opt_value):
     (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
@@ -83,8 +60,6 @@ def report_results(instance_name, results, opt_value):
     
     
 def report_compiled_results(compiled_results):
-
-    from datetime import datetime
     timestamp = datetime.today()
     
     report_file_name = get_problem_name() + '_' + timestamp.strftime('%Y-%m-%d_%Hh%M') + '.tex'
@@ -142,7 +117,8 @@ def report_compiled_results(compiled_results):
 
 
 def local_search(instance_data, params):
-    (num_iterations, T_max, cooling_rate, median_delta) = params
+    (median_delta) = params
+    max_num_iterations = DEFAULT_NUM_ITERATIONS
 
     # Calculate initial solution
     current_solution = generate_random_solution(instance_data)
@@ -157,17 +133,24 @@ def local_search(instance_data, params):
     max_value_history = []
     T_history = []
     P_history = []
-    T = T_max
     
-    from random import random
+    it = 0
+    last_improvement_iteration = 0
 
     # Start simulated annealing
-    for i in range(num_iterations):
+    while it < max_num_iterations:
+        
+        # Give up if it has been a long time since the last improvement
+        if (it - last_improvement_iteration) > (max_num_iterations / 10): break
 
         # Store historic data
         value_history.append(current_value)
         max_value_history.append(max_value)
-        T_history.append(T / T_max)
+        
+        # Parameter k defines the steepness of the curve
+        k = 10.0
+        P_accept_median_delta = exp(-(k * float(it) / float(max_num_iterations)))
+        T_history.append(P_accept_median_delta)
         
         # Generate a neighbour solution
         (neighbour, delta) = generate_neighbour(current_solution, instance_data)
@@ -179,43 +162,39 @@ def local_search(instance_data, params):
             current_value = neighbour_value
         else:
             # Otherwise, calculate probability of accepting this suboptimal solution
-            P_accept_subopt = median_delta * (T / T_max) / (-delta * optimization_sense)
+            P_accept_subopt = median_delta * P_accept_median_delta / (-delta * optimization_sense)
             
             if P_accept_subopt > 1.0: P_accept_subopt = 1.0
-                
+            
             # And move if the suboptimal solution gets lucky
-            if random() < P_accept_subopt:
-                P_history.append((i, P_accept_subopt))
+            if random.random() < P_accept_subopt:
+                P_history.append((it, P_accept_subopt))
                 current_solution = neighbour
                 current_value = neighbour_value
 
         # Update best solution found until now, if needed
         global_improvement = current_value - max_value
         if (global_improvement * optimization_sense) > 0:
+            last_improvement_iteration = it
             best_solution = current_solution
             max_value = current_value
-
-        # Decrease the temperature
-        T = T * cooling_rate
-    
-    return (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations)
+            
+        # Increment iteration
+        it += 1
+        
+    return (best_solution, max_value, value_history, max_value_history, T_history, P_history, it)
 
 
 def main():
     
-    from random import seed
-    seed(236887699)
+    random.seed(236887699)
     
     compiled_results = []
     
     instances_dir = get_instances_dir()
-
-    from os import listdir
     problem_set_files = listdir(instances_dir)
 
-    from os.path import basename, splitext
-    
-    for file_name in ['bqp50.txt', 'bqp100.txt']:#problem_set_files:
+    for file_name in ['bqp50.txt', 'bqp100.txt', 'bqp250.txt', 'bqp500.txt']:#problem_set_files:
         file_path = instances_dir + file_name
         (problem_set_name, ext) = splitext(basename(file_path))
 
@@ -228,13 +207,11 @@ def main():
         for instance in problem_set:
             (instance_name, instance_data) = instance
             
-            from time import time
             start_time = time()
             
             # Calculate good simulation params
             median_delta = estimate_median_delta(instance_data)
-            params = calculate_simulation_params(median_delta)
-            (num_iterations, T_max, cooling_rate, median_delta) = params
+            params = (median_delta)
             
             # Get optimal value
             opt_value = get_opt_value(instance_name)
@@ -300,4 +277,8 @@ if __name__ == "__main__":
         print "$ python local_search.py bqp"
         exit()
 
+    #import hotshot
+    #prof = hotshot.Profile("hotshot_edi_stats")
+    #prof.runcall(main)
+    #prof.close()
     main()
