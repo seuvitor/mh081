@@ -1,6 +1,7 @@
 from numpy import *
 import random
 from os.path import basename, splitext
+import copy
 
 
 def get_problem_optimization_sense():
@@ -21,8 +22,9 @@ def get_problem_name():
 def generate_random_solution(instance_data):
     (num_vars, Q) = instance_data
 
-    random_solution = [(1 if (random.random() > 0.5) else 0) for i in range(num_vars)]
-
+    random_solution = zeros((num_vars), dtype=int)
+    for i in range(num_vars): random_solution[i] = (1 if (random.random() > 0.5) else 0)
+    
     return random_solution
 
 
@@ -31,24 +33,8 @@ def read_instance_data(file):
     [num_vars, num_non_zero] = line.split()
     num_vars, num_non_zero = eval(num_vars), eval(num_non_zero)
 
-    """
-    A = array([[0,   1,  2,  3],   # initialize 2-d array
-               [4,   5,  6,  7],
-               [8,   9, 10, 11],
-               [12, 13, 14, 15]], dtype=int)
-               
-    mz = zeros((num_vars, num_vars), dtype=int)
-               
-    b = array([2,2,2,2])
-    
-    print 'numpy vector b:\n', b
-    print 'numpy 2d array A:\n', A
-    
-    print 'Ab:\n', dot(A,b)
-    """
-    
     # Create n*n matrix filled with zeroes
-    Q = [[0 for i in range(num_vars)] for i in range(num_vars)]
+    Q = zeros((num_vars, num_vars), dtype=int)
     
     for i in range(num_non_zero):
         line = file.readline()
@@ -59,9 +45,9 @@ def read_instance_data(file):
         i -= 1
         j -= 1
         
-        Q[i][j] = q_ij
-        Q[j][i] = q_ij
-        
+        Q[i,j] = q_ij
+        Q[j,i] = q_ij
+    
     instance_data = (num_vars, Q)
     return instance_data
     
@@ -162,13 +148,7 @@ def get_opt_value(instance_name):
 def calculate_value(solution, instance_data):
     (num_vars, Q) = instance_data
     
-    value = 0.0
-    
-    for i in range(num_vars):
-        for j in range(num_vars):
-            value += solution[i] * solution[j] * Q[i][j]
-    
-    return value
+    return dot(dot(solution,Q),solution)
 
 
 def generate_neighbour(solution, instance_data):
@@ -178,13 +158,14 @@ def generate_neighbour(solution, instance_data):
     i = random.randint(0, (num_vars - 1))
     
     # Calculate impact of alternating x_i
-    sum_i = Q[i][i]
-    for j in range(num_vars):
-        if j != i:
-            sum_i += solution[j] * 2 * Q[i][j]
+    sum_i = dot(solution, Q[i]) * 2
+    if solution[i] == 0:
+        sum_i += Q[i,i]
+    else:
+        sum_i -= Q[i,i]
 
     # Copy current solution to the neighbour solution
-    neighbour = list(solution)
+    neighbour = copy.deepcopy(solution)
     
     # Alternate value of x_i and set the delta accordingly
     (neighbour[i], delta) = (1, sum_i) if (solution[i] == 0) else (0, -sum_i)

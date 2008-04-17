@@ -50,7 +50,6 @@ def report_results(instance_name, results, opt_value):
     plot(range(num_iterations), T_history)
     plot(P_history_X, P_history_Y, 'ro', markersize=2)
     [x_min, x_max, y_min, y_max] = axis()
-    #axis([x_min, x_max, 0.0, 1.0])
     xlabel('iterations')
     ylabel('T / T_max')
 
@@ -105,7 +104,8 @@ def report_compiled_results(compiled_results):
         table += table_entries
         table += '\\hline\n'\
                  '\\end{tabular}\n'\
-                 '\\end{center}\n'
+                 '\\end{center}\n'\
+                 '\\clearpage\n'
         
         text += table
     
@@ -194,7 +194,7 @@ def main():
     instances_dir = get_instances_dir()
     problem_set_files = listdir(instances_dir)
 
-    for file_name in ['bqp50.txt', 'bqp100.txt', 'bqp250.txt', 'bqp500.txt']:#problem_set_files:
+    for file_name in ['bqp50.txt', 'bqp100.txt']:#problem_set_files:
         file_path = instances_dir + file_name
         (problem_set_name, ext) = splitext(basename(file_path))
 
