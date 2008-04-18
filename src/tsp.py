@@ -1,3 +1,8 @@
+from numpy import *
+import random
+from os.path import basename, splitext
+
+
 def get_problem_optimization_sense():
     MIN = -1
     MAX = 1
@@ -16,9 +21,8 @@ def get_problem_name():
 def generate_random_solution(instance_data):
     (vertices, edges, distances) = instance_data
     
-    from random import shuffle
     random_solution = [id_v for (id_v, x_v, y_v) in vertices]
-    shuffle(random_solution)
+    random.shuffle(random_solution)
 
     return random_solution
 
@@ -40,7 +44,6 @@ def read_instance_data(file):
         edges[id_v] = []
 
     # Create edges between cities
-    from math import sqrt
     for (id_u, x_u, y_u) in vertices:
         for (id_v, x_v, y_v) in vertices:
             if id_u == id_v: continue
@@ -55,12 +58,14 @@ def read_instance_data(file):
     
 
 def read_problem_set_file(file_path):
-    from os.path import basename, splitext
     (problem_set_name, ext) = splitext(basename(file_path))
     
     file = open(file_path, 'r')
     
-    for i in range(6): file.readline() # Skip header lines
+    # Skip header lines
+    line = file.readline()
+    while not line.startswith('NODE_COORD_SECTION'):
+        line = file.readline()
 
     instance_name = problem_set_name
     instance_data = read_instance_data(file)
@@ -106,9 +111,8 @@ def generate_neighbour(solution, instance_data):
     size = len(tour)
     
     # Get random indexes for swapping
-    from random import randint
-    i = randint(0, (size - 1))
-    j = (i + randint(1, size - 2)) % size
+    i = random.randint(0, (size - 1))
+    j = (i + random.randint(1, size - 2)) % size
     
     neighbour = [v_id for v_id in tour]
 

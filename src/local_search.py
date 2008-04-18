@@ -196,7 +196,7 @@ def main():
     instances_dir = get_instances_dir()
     problem_set_files = listdir(instances_dir)
 
-    for file_name in ['bqp50.txt', 'bqp100.txt']:#problem_set_files:
+    for file_name in problem_set_files:
         file_path = instances_dir + file_name
         (problem_set_name, ext) = splitext(basename(file_path))
 
@@ -268,7 +268,7 @@ def main():
 
 if __name__ == "__main__":
     from sys import argv
-    argv.append('bqp')
+    argv.append('tsp')
 
     if 'bqp' in argv:
         from bqp import *
