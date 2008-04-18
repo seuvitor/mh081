@@ -1,6 +1,7 @@
 from numpy import *
 import random
 from os.path import basename, splitext
+import copy
 
 
 def get_problem_optimization_sense():
@@ -19,41 +20,48 @@ def get_problem_name():
 
 
 def generate_random_solution(instance_data):
-    (vertices, edges, distances) = instance_data
+    (num_vertices, D) = instance_data
     
-    random_solution = [id_v for (id_v, x_v, y_v) in vertices]
+    random_solution = range(0, num_vertices)
+    #random_solution = [id_v for (id_v, x_v, y_v) in vertices]
     random.shuffle(random_solution)
 
     return random_solution
 
 
 def read_instance_data(file):
-    vertices = []
-    edges = {}
-    distances = {}
+
+    # Get num of vertices
+    line = file.readline()
+    while not line.startswith('DIMENSION'):
+        line = file.readline()
+
+    num_vertices = eval(line.split().pop())
+
+    # Skip lines 
+    while not line.startswith('NODE_COORD_SECTION'):
+        line = file.readline()
     
     # Get cities coordinates from the input file
+    coordinates = []
     line = file.readline()
     while not line.startswith('EOF'):
         [id, x, y] = line.split()
-        vertices.append((id, eval(x), eval(y)))
+        coordinates.append((float(x), float(y)))
         line = file.readline()
 
-    # Initialize adjacency lists
-    for (id_v, x_v, y_v) in vertices:
-        edges[id_v] = []
+    D = zeros((num_vertices, num_vertices), dtype=float)
 
-    # Create edges between cities
-    for (id_u, x_u, y_u) in vertices:
-        for (id_v, x_v, y_v) in vertices:
-            if id_u == id_v: continue
-            d_uv = sqrt(((x_v - x_u)**2) + ((y_v - y_u)**2))
-            edges[id_u].append((id_v, d_uv))
-            edges[id_v].append((id_u, d_uv))
-            distances[(id_u, id_v)] = d_uv
-            distances[(id_v, id_u)] = d_uv
+    # Calculate distances between cities
+    for u in range(num_vertices):
+        for v in range(num_vertices):
+            (x_u, y_u) = coordinates[u]
+            (x_v, y_v) = coordinates[v]
+            D_uv = sqrt(((x_v - x_u)**2) + ((y_v - y_u)**2))
+            D[u,v] = D_uv
+            D[v,u] = D_uv
 
-    instance_data = (vertices, edges, distances)
+    instance_data = (num_vertices, D)
     return instance_data
     
 
@@ -62,11 +70,6 @@ def read_problem_set_file(file_path):
     
     file = open(file_path, 'r')
     
-    # Skip header lines
-    line = file.readline()
-    while not line.startswith('NODE_COORD_SECTION'):
-        line = file.readline()
-
     instance_name = problem_set_name
     instance_data = read_instance_data(file)
     
@@ -76,9 +79,115 @@ def read_problem_set_file(file_path):
 
 
 def get_opt_value(instance_name):
-    map = {'berlin52': 7542.0,\
-           'bier127': 118282.0,\
-           'ch130': 6110.0}
+    map = {'a280':      2579.0,\
+           'ali535':    202310.0,\
+           'att48':     10628.0,\
+           'att532':    27686.0,\
+           'bayg29':    1610.0,\
+           'bays29':    2020.0,\
+           'berlin52':  7542.0,\
+           'bier127':   118282.0,\
+           'brazil58':  25395.0,\
+           'brd14051':  468942.0,\
+           'brg180':    1950.0,\
+           'burma14':   3323.0,\
+           'ch130':     6110.0,\
+           'ch150':     6528.0,\
+           'd198':      15780.0,\
+           'd493':      35002.0,\
+           'd657':      48912.0,\
+           'd1291':     50801.0,\
+           'd1655':     62128.0,\
+           'd2103':     79952.0,\
+           'd18512':    644650.0,\
+           'dantzig42': 699.0,\
+           'dsj1000':   18659688.0,\
+           'eil51':     426.0,\
+           'eil76':     538.0,\
+           'fl417':     11861.0,\
+           'fl1400':    20127.0,\
+           'fl1577':    22204.0,\
+           'fl3795':    28723.0,\
+           'fnl4461':   182566.0,\
+           'fri26':     937.0,\
+           'gil262':    2378.0,\
+           'gr17':      2085.0,\
+           'gr21':      2707.0,\
+           'gr24':      1272.0,\
+           'gr48':      5046.0,\
+           'gr96':      55209.0,\
+           'gr120':     6942.0,\
+           'gr137':     69853.0,\
+           'gr202':     40160.0,\
+           'gr229':     134602.0,\
+           'gr431':     171414.0,\
+           'gr666':     294358.0,\
+           'hk48':      11461.0,\
+           'kroA100':   21282.0,\
+           'kroB100':   22141.0,\
+           'kroC100':   20749.0,\
+           'kroD100':   21294.0,\
+           'kroE100':   22068.0,\
+           'kroA150':   26524.0,\
+           'kroB150':   26130.0,\
+           'kroA200':   29368.0,\
+           'kroB200':   29437.0,\
+           'lin105':    14379.0,\
+           'lin318':    42029.0,\
+           'linhp318':  41345.0,\
+           'nrw1379':   56638.0,\
+           'p654':      34643.0,\
+           'pa561':     2763.0,\
+           'pcb442':    50778.0,\
+           'pcb1173':   56892.0,\
+           'pcb3038':   137694.0,\
+           'pla7397':   23260728.0,\
+           'pla33810':  65913275.0,\
+           'pla85900':  141904862.0,\
+           'pr76':      108159.0,\
+           'pr107':     44303.0,\
+           'pr124':     59030.0,\
+           'pr136':     96772.0,\
+           'pr144':     58537.0,\
+           'pr152':     73682.0,\
+           'pr226':     80369.0,\
+           'pr264':     49135.0,\
+           'pr299':     48191.0,\
+           'pr439':     107217.0,\
+           'pr1002':    259045.0,\
+           'pr2392':    378032.0,\
+           'rat99':     1211.0,\
+           'rat195':    2323.0,\
+           'rat575':    6773.0,\
+           'rat783':    8806.0,\
+           'rd100':     7910.0,\
+           'rd400':     15281.0,\
+           'rl1304':    252948.0,\
+           'rl1323':    270199.0,\
+           'rl1889':    316536.0,\
+           'rl5915':    565040,\
+           'rl5934':    554070.0,\
+           'rl11849':   920847.0,\
+           'si175':     21407.0,\
+           'si535':     48450.0,\
+           'si1032':    92650.0,\
+           'st70':      675.0,\
+           'swiss42':   1273.0,\
+           'ts225':     126643.0,\
+           'tsp225':    3919.0,\
+           'u159':      42080.0,\
+           'u574':      36905.0,\
+           'u724':      41910.0,\
+           'u1060':     224094.0,\
+           'u1432':     152970.0,\
+           'u1817':     57201.0,\
+           'u2152':     64253.0,\
+           'u2319':     234256.0,\
+           'ulysses16': 6859.0,\
+           'ulysses22': 7013.0,\
+           'usa13509':  19947008.0,\
+           'vm1084':    239297.0,\
+           'vm1748':    336556.0}
 
     if not instance_name in map:
         return None
@@ -87,25 +196,23 @@ def get_opt_value(instance_name):
 
 
 def calculate_value(solution, instance_data):
-    (vertices, edges, distances) = instance_data
+    (num_vertices, D) = instance_data
     tour = solution
     
     value = 0.0
     
     # Add weights of edges linking consecutive vertices in the tour
     for i in range(len(tour) - 1):
-        id_u, id_v = tour[i], tour[i + 1]
-        value = value + distances[(id_u, id_v)]
+        value += D[tour[i], tour[i + 1]]
     
     # Add the weight of the returning edge
-    id_start, id_end = tour[0], tour[len(tour) - 1]
-    value = value + distances[(id_end, id_start)]
+    value += D[tour[0], tour[len(tour) - 1]]
     
     return value
 
 
 def generate_neighbour(solution, instance_data):
-    (vertices, edges, distances) = instance_data
+    (num_vertices, D) = instance_data
     tour = solution
     
     size = len(tour)
@@ -114,14 +221,14 @@ def generate_neighbour(solution, instance_data):
     i = random.randint(0, (size - 1))
     j = (i + random.randint(1, size - 2)) % size
     
-    neighbour = [v_id for v_id in tour]
+    neighbour = list(tour)
 
     # Get ids of the former predecessor and successor of the moving element
-    id_old_pred = neighbour[(i - 1) % size]
-    id_old_succ = neighbour[(i + 1) % size]
+    old_pred = neighbour[(i - 1) % size]
+    old_succ = neighbour[(i + 1) % size]
     
     # Remove the moving element from its old position
-    id_v = neighbour.pop(i)
+    v = neighbour.pop(i)
     
     # In this special case, the former first element must move to the end
     if j == 0:
@@ -129,14 +236,14 @@ def generate_neighbour(solution, instance_data):
         neighbour.append(first)
 
     # Insert the moving element in its new position
-    neighbour.insert(j, id_v)
+    neighbour.insert(j, v)
     
     # Get ids of the new predecessor and successor of the moving element
-    id_new_pred = neighbour[(j - 1) % size]
-    id_new_succ = neighbour[(j + 1) % size]
+    new_pred = neighbour[(j - 1) % size]
+    new_succ = neighbour[(j + 1) % size]
 
     # Calculate the value variation in changing the tour
-    delta = distances[(id_new_pred, id_v)] + distances[(id_v, id_new_succ)] - distances[(id_new_pred, id_new_succ)]\
-            - distances[(id_old_pred, id_v)] - distances[(id_v, id_old_succ)] + distances[(id_old_pred, id_old_succ)]
+    delta = D[new_pred, v] + D[v, new_succ] - D[new_pred, new_succ]\
+            - D[old_pred, v] - D[v, old_succ] + D[old_pred, old_succ]
 
     return (neighbour, delta)
