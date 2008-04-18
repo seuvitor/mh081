@@ -12,7 +12,7 @@ def get_problem_optimization_sense():
 
 
 def get_instances_dir():
-    return './bqp_instances/'
+    return '../bqp_instances/'
 
 
 def get_problem_name():

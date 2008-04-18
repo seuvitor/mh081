@@ -6,7 +6,11 @@ def get_problem_optimization_sense():
 
 
 def get_instances_dir():
-    return './tsp_instances/'
+    return '../tsp_instances/'
+
+
+def get_problem_name():
+    return 'TSP'
 
 
 def generate_random_solution(instance_data):

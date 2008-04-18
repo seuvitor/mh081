@@ -1,9 +1,9 @@
-REPORTS_DIR = './reports/'
-LIB_DIR = './lib'
+REPORTS_DIR = '../reports/'
+LIB_DIR = '../lib'
 
 INFINITY = 1e300000
 DEFAULT_NUM_ITERATIONS = 10000
-DEFAULT_NUM_SIMULATIONS = 100
+DEFAULT_NUM_SIMULATIONS = 1
 
 import sys
 from os.path import abspath
@@ -93,8 +93,10 @@ def report_compiled_results(compiled_results):
 
         table_entries = ''
         for (instance_name, opt_value, best_value, percentual_gap, total_time) in compiled_results_group:
-                    
-            if best_value < opt_value:
+            
+            gap = opt_value - best_value
+            
+            if (gap * get_problem_optimization_sense()) > 0:
                 table_entries += '%s & %.0f & %.0f & %.2f & %.2f \\\\\n' %\
                     (instance_name, opt_value, best_value, percentual_gap, total_time)
             else:
@@ -111,7 +113,7 @@ def report_compiled_results(compiled_results):
     
     text += '\\end{document}'
 
-    output_file = open('./reports/' + report_file_name, 'w')
+    output_file = open(REPORTS_DIR + report_file_name, 'w')
     output_file.write(text)
     output_file.close()
 
