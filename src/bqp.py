@@ -19,6 +19,11 @@ def get_problem_name():
     return 'UBQP'
 
 
+def get_problem_size(instance_data):
+    (num_vars, Q) = instance_data
+    return num_vars
+
+
 def generate_random_solution(instance_data):
     (num_vars, Q) = instance_data
 

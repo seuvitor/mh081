@@ -19,11 +19,15 @@ def get_problem_name():
     return 'TSP'
 
 
+def get_problem_size(instance_data):
+    (num_vertices, D) = instance_data
+    return num_vertices
+
+
 def generate_random_solution(instance_data):
     (num_vertices, D) = instance_data
     
     random_solution = range(0, num_vertices)
-    #random_solution = [id_v for (id_v, x_v, y_v) in vertices]
     random.shuffle(random_solution)
 
     return random_solution
