@@ -2,8 +2,8 @@ REPORTS_DIR = '../reports/'
 LIB_DIR = '../lib'
 
 INFINITY = 1e300000
-DEFAULT_NUM_ITERATIONS = 10000
-DEFAULT_NUM_SIMULATIONS = 1
+DEFAULT_NUM_ITERATIONS = 400
+TIME_LIMIT = 60
 
 import sys
 from os.path import abspath
@@ -17,13 +17,24 @@ from time import time
 from numpy import *
 import random
 
+
+class writer:
+    def __init__(self, sysout):
+        self.sysout = sysout
+        self.log = ''
+
+    def write(self, text):
+        self.sysout.write(text)
+        self.log += text
+
+
 def estimate_median_delta(instance_data):
     delta_sample = []
     
-    for i in range(40):
+    for i in range(80):
         solution = generate_random_solution(instance_data)
 
-        for j in range(10):
+        for j in range(20):
             (neighbour, delta) = generate_neighbour(solution, instance_data)
             delta_sample.append(abs(delta))
         
@@ -58,7 +69,7 @@ def report_results(instance_name, results, opt_value):
     close()
     
     
-def report_compiled_results(compiled_results):
+def report_compiled_results(compiled_results, screen_output):
     timestamp = datetime.today()
     
     report_file_name = get_problem_name() + '_' + timestamp.strftime('%Y-%m-%d_%Hh%M') + '.tex'
@@ -66,6 +77,7 @@ def report_compiled_results(compiled_results):
 
     text = ''
     text += '\\documentclass{article}\n'\
+            '\\usepackage{fullpage}\n'\
             '\\usepackage[brazil]{babel}\n'\
             '\\usepackage[latin1]{inputenc}\n'\
             '\\title{Relatorio de experimento\\\\\\small{'
@@ -110,6 +122,11 @@ def report_compiled_results(compiled_results):
                  '\\clearpage\n'
         
         text += table
+        
+    text += '\\scriptsize\n'
+    text += '\\begin{verbatim}\n'
+    text += screen_output
+    text += '\\end{verbatim}\n'
     
     text += '\\end{document}'
 
@@ -120,7 +137,8 @@ def report_compiled_results(compiled_results):
 
 def local_search(instance_data, params):
     (median_delta) = params
-    max_num_iterations = DEFAULT_NUM_ITERATIONS
+    
+    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
 
     # Calculate initial solution
     current_solution = generate_random_solution(instance_data)
@@ -138,20 +156,20 @@ def local_search(instance_data, params):
     
     it = 0
     last_improvement_iteration = 0
-
+    
     # Start simulated annealing
-    while it < max_num_iterations:
+    while True:
         
         # Give up if it has been a long time since the last improvement
-        if (it - last_improvement_iteration) > (max_num_iterations / 10): break
-
+        if (it - last_improvement_iteration) > (expected_num_iterations / 10): break
+        
         # Store historic data
         value_history.append(current_value)
         max_value_history.append(max_value)
         
         # Parameter k defines the steepness of the curve
         k = 10.0
-        P_accept_median_delta = exp(-(k * float(it) / float(max_num_iterations)))
+        P_accept_median_delta = exp(-(k * float(it) / float(expected_num_iterations)))
         T_history.append(P_accept_median_delta)
         
         # Generate a neighbour solution
@@ -195,6 +213,18 @@ def main():
     
     instances_dir = get_instances_dir()
     problem_set_files = listdir(instances_dir)
+    
+    import sys
+    saved_sysout = sys.stdout
+    sys.stdout = writer(sys.stdout)
+
+    print '> MACHINE SETUP:'
+    print 'Processor: Intel Celeron M 410 1.46GHz'
+    print 'Memory: 896MB RAM'
+
+    print '> ALGORITHM SETUP:'
+    print 'Number of iterations (per instance size unit):', str(DEFAULT_NUM_ITERATIONS)
+    print 'Time limit (seconds):', TIME_LIMIT
 
     for file_name in problem_set_files:
         file_path = instances_dir + file_name
@@ -210,6 +240,7 @@ def main():
             (instance_name, instance_data) = instance
             
             start_time = time()
+            current_time = start_time
             
             # Calculate good simulation params
             median_delta = estimate_median_delta(instance_data)
@@ -222,14 +253,16 @@ def main():
             best_max_value = - (INFINITY * optimization_sense)
             
             print '--------------------------------------------------------------------'
-            print '> instance:', instance_name
+            print '> INSTANCE:', instance_name
             
-            num_simulations = DEFAULT_NUM_SIMULATIONS
+            num_restarts = 0
             
-            # Run the simulation several times for the instance
-            for i in range(num_simulations):
+            # Run the simulation several times for the instance until the computational time expires
+            while (current_time - start_time) < TIME_LIMIT:
                 results = local_search(instance_data, params)
                 (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
+                
+                current_time = time()
                 
                 # Store the best results found until now
                 global_improvement = max_value - best_max_value
@@ -242,33 +275,50 @@ def main():
                     absolute_gap = best_max_value - opt_value
                     if (absolute_gap * optimization_sense) >= 0:
                         break
+                
+                num_restarts += 1
             
-            end_time = time()
-            total_time = end_time - start_time
+            total_time = current_time - start_time
+            
+            print '> OVERALL STATISTICS:'
+            print 'Total time:', total_time
+            print 'Number of restarts:', num_restarts
             
             # Use the best results and the optimal solution for reporting results
+            print '> WINNING SIMULATION STATISTICS:'
             (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = best_results
-            print '> num_iterations:', num_iterations
-            print '> best_solution:', best_solution
-            print '> max_value:', max_value
+            print 'Number of iterations:', num_iterations
+            print 'Best solution value:', max_value
             
             if opt_value != None:
                 absolute_gap = opt_value - max_value
                 percentual_gap = (absolute_gap * optimization_sense / opt_value) * 100.0
-                print '> opt_value:', opt_value
-                print '> gap:', percentual_gap, '%'
-
+                print 'Optimal value:', opt_value
+                print 'Gap:', percentual_gap, '%'
+            
+            print '> BEST SOLUTION:'
+            solution_text = ''
+            for i in range(len(best_solution)):
+                solution_text += str(best_solution[i]) + ','
+            import textwrap
+            solution_text = textwrap.fill(solution_text, 100)
+            print solution_text
+            
             compiled_results.append((instance_name, opt_value, max_value, percentual_gap, total_time))
             
             # Draw graphs about the simulation with best results
             report_results(instance_name, best_results, opt_value)
     
-    # Create table with overall results
-    report_compiled_results(compiled_results)
+    screen_output = sys.stdout.log
+    sys.stdout = sys.stdout.sysout
+
+    # Create complete report
+    report_compiled_results(compiled_results, screen_output)
+    
 
 if __name__ == "__main__":
     from sys import argv
-    argv.append('tsp')
+    argv.append('bqp')
 
     if 'bqp' in argv:
         from bqp import *
