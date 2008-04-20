@@ -135,7 +135,7 @@ def report_compiled_results(compiled_results, screen_output):
     output_file.close()
 
 
-def local_search(instance_data, params):
+def simulated_annealing(instance_data, params, start_time, current_time):
     (median_delta) = params
     
     expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
@@ -158,7 +158,7 @@ def local_search(instance_data, params):
     last_improvement_iteration = 0
     
     # Start simulated annealing
-    while True:
+    while (current_time - start_time) < TIME_LIMIT:
         
         # Give up if it has been a long time since the last improvement
         if (it - last_improvement_iteration) > (expected_num_iterations / 10): break
@@ -202,10 +202,12 @@ def local_search(instance_data, params):
         # Increment iteration
         it += 1
         
+        current_time = time()
+        
     return (best_solution, max_value, value_history, max_value_history, T_history, P_history, it)
 
 
-def main():
+def main_simulated_annealing():
     
     random.seed(236887699)
     
@@ -259,7 +261,7 @@ def main():
             
             # Run the simulation several times for the instance until the computational time expires
             while (current_time - start_time) < TIME_LIMIT:
-                results = local_search(instance_data, params)
+                results = simulated_annealing(instance_data, params, start_time, current_time)
                 (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
                 
                 current_time = time()
@@ -333,4 +335,4 @@ if __name__ == "__main__":
     #prof = hotshot.Profile("hotshot_edi_stats")
     #prof.runcall(main)
     #prof.close()
-    main()
+    main_simulated_annealing()
