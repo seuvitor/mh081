@@ -224,6 +224,8 @@ def generate_neighbour(solution, instance_data):
     # Get random indexes for swapping
     i = random.randint(0, (size - 1))
     j = (i + random.randint(1, size - 2)) % size
+    if j < i:
+        j += 1
     
     neighbour = list(tour)
 
@@ -234,11 +236,6 @@ def generate_neighbour(solution, instance_data):
     # Remove the moving element from its old position
     v = neighbour.pop(i)
     
-    # In this special case, the former first element must move to the end
-    if j == 0:
-        first = neighbour.pop(0)
-        neighbour.append(first)
-
     # Insert the moving element in its new position
     neighbour.insert(j, v)
     
