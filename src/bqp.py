@@ -163,17 +163,20 @@ def generate_neighbour(solution, instance_data):
     i = random.randint(0, (num_vars - 1))
     
     # Calculate impact of alternating x_i
-    sum_i = dot(solution, Q[i]) * 2
-    if solution[i] == 0:
-        sum_i += Q[i,i]
-    else:
-        sum_i -= Q[i,i]
+    delta = dot(solution, Q[i]) * 2
+    
+    # Multiply by -1 if the variable is being zeroed
+    if solution[i] == 1:
+        delta = -delta
+    
+    # Fix double or no counting of the diagonal value by the dot product
+    delta += Q[i,i]
 
     # Copy current solution to the neighbour solution
     neighbour = copy.deepcopy(solution)
     
-    # Alternate value of x_i and set the delta accordingly
-    (neighbour[i], delta) = (1, sum_i) if (solution[i] == 0) else (0, -sum_i)
+    # Alternate value of x_i
+    neighbour[i] = 1 - neighbour[i]
 
     return (neighbour, delta)
     
