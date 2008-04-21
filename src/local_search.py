@@ -55,14 +55,15 @@ def report_results(instance_name, results, opt_value):
     xlabel('iterations')
     ylabel('solution value')
 
-    subplot(212)
-    P_history_X = [iteration for (iteration, P) in P_history]
-    P_history_Y = [P for (iteration, P) in P_history]
-    plot(range(num_iterations), T_history)
-    plot(P_history_X, P_history_Y, 'ro', markersize=2)
-    [x_min, x_max, y_min, y_max] = axis()
-    xlabel('iterations')
-    ylabel('T / T_max')
+    if T_history != None and P_history != None:
+        subplot(212)
+        P_history_X = [iteration for (iteration, P) in P_history]
+        P_history_Y = [P for (iteration, P) in P_history]
+        plot(range(num_iterations), T_history)
+        plot(P_history_X, P_history_Y, 'ro', markersize=2)
+        [x_min, x_max, y_min, y_max] = axis()
+        xlabel('iterations')
+        ylabel('T / T_max')
 
     figure_path = REPORTS_DIR + instance_name + '.png'
     savefig(figure_path)
@@ -133,6 +134,52 @@ def report_compiled_results(compiled_results, screen_output):
     output_file = open(REPORTS_DIR + report_file_name, 'w')
     output_file.write(text)
     output_file.close()
+
+
+def local_search(instance_data, params, start_time, current_time):
+    (median_delta) = params
+    
+    # Calculate initial solution
+    current_solution = generate_random_solution(instance_data)
+    current_value = calculate_value(current_solution, instance_data)
+    
+    optimization_sense = get_problem_optimization_sense()
+    
+    value_history = []
+    max_value_history = []
+    
+    it = 0
+    
+    improving = True
+    
+    # Generate all possible moves
+    moves = generate_all_moves(current_solution, instance_data)
+    random.shuffle(moves)
+    
+    # Start local search
+    while improving and (current_time - start_time) < TIME_LIMIT:
+        
+        # Increment iteration
+        it += 1
+		
+        # Store historic data
+        value_history.append(current_value)
+        max_value_history.append(current_value)
+        
+        improving = False
+        for move in moves:
+            delta = calculate_move_delta(current_solution, instance_data, move)
+            
+            # If the neighbour solution is better, move to it
+            if (delta * optimization_sense) > 0:
+                apply_move(current_solution, instance_data, move)
+                current_value = current_value + delta
+                improving = True
+                break
+        
+        current_time = time()
+        
+    return (current_solution, current_value, value_history, max_value_history, None, None, it)
 
 
 def simulated_annealing(instance_data, params, start_time, current_time):
@@ -207,7 +254,7 @@ def simulated_annealing(instance_data, params, start_time, current_time):
     return (best_solution, max_value, value_history, max_value_history, T_history, P_history, it)
 
 
-def main_simulated_annealing():
+def main(algorithm):
     
     random.seed(236887699)
     
@@ -261,7 +308,7 @@ def main_simulated_annealing():
             
             # Run the simulation several times for the instance until the computational time expires
             while (current_time - start_time) < TIME_LIMIT:
-                results = simulated_annealing(instance_data, params, start_time, current_time)
+                results = algorithm(instance_data, params, start_time, current_time)
                 (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
                 
                 current_time = time()
@@ -321,18 +368,28 @@ def main_simulated_annealing():
 if __name__ == "__main__":
     from sys import argv
     argv.append('bqp')
+    argv.append('sa')
 
     if 'bqp' in argv:
         from bqp import *
     elif 'tsp' in argv:
         from tsp import *
     else:
-        print "Specify a problem, e.g.:"
-        print "$ python local_search.py bqp"
+        print "Specify a problem and algorithm, e.g.:"
+        print "$ python local_search.py bqp sa"
+        exit()
+
+    if 'ls' in argv:
+        main(local_search)
+    elif 'sa' in argv:
+        main(simulated_annealing)
+    else:
+        print "Specify a problem and algorithm, e.g.:"
+        print "$ python local_search.py bqp sa"
         exit()
 
     #import hotshot
     #prof = hotshot.Profile("hotshot_edi_stats")
-    #prof.runcall(main)
+    #prof.runcall(main(simulated_annealing))
     #prof.close()
-    main_simulated_annealing()
+    

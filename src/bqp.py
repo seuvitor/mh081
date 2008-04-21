@@ -172,6 +172,12 @@ def calculate_move_delta(solution, instance_data, i):
     return delta
 
 
+def generate_all_moves(solution, instance_data):
+    (num_vars, Q) = instance_data
+    
+    return range(num_vars)
+
+
 def generate_random_move(solution, instance_data):
     (num_vars, Q) = instance_data
     

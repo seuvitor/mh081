@@ -239,6 +239,21 @@ def calculate_move_delta(solution, instance_data, (i, j)):
     return delta
 
 
+def generate_all_moves(solution, instance_data):
+    size = len(solution)
+    
+    moves = []
+    
+    for i in range(0, (size - 1)):
+        for k in range(1, size - 2):
+            j = (i + k) % size
+            if j < i:
+                j += 1
+            moves.append((i, j))
+
+    return moves
+
+
 def generate_random_move(solution, instance_data):
     size = len(solution)
     
