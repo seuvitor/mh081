@@ -156,7 +156,7 @@ def calculate_value(solution, instance_data):
     return dot(dot(solution,Q),solution)
 
 
-def generate_neighbour(solution, instance_data):
+def generate_random_move(solution, instance_data):
     (num_vars, Q) = instance_data
     
     # Get random index for alternating binary value
@@ -172,11 +172,8 @@ def generate_neighbour(solution, instance_data):
     # Fix double or no counting of the diagonal value by the dot product
     delta += Q[i,i]
 
-    # Copy current solution to the neighbour solution
-    neighbour = copy.deepcopy(solution)
-    
-    # Alternate value of x_i
-    neighbour[i] = 1 - neighbour[i]
+    return (i, delta)
 
-    return (neighbour, delta)
-    
+
+def apply_move(solution, instance_data, i):
+    solution[i] = 1 - solution[i]

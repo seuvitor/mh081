@@ -215,11 +215,10 @@ def calculate_value(solution, instance_data):
     return value
 
 
-def generate_neighbour(solution, instance_data):
+def generate_random_move(solution, instance_data):
     (num_vertices, D) = instance_data
-    tour = solution
-    
-    size = len(tour)
+
+    size = len(solution)
     
     # Get random indexes for swapping
     i = random.randint(0, (size - 1))
@@ -227,24 +226,27 @@ def generate_neighbour(solution, instance_data):
     if j < i:
         j += 1
     
-    neighbour = list(tour)
-
     # Get ids of the former predecessor and successor of the moving element
-    old_pred = neighbour[(i - 1) % size]
-    old_succ = neighbour[(i + 1) % size]
-    
-    # Remove the moving element from its old position
-    v = neighbour.pop(i)
-    
-    # Insert the moving element in its new position
-    neighbour.insert(j, v)
-    
+    old_pred = solution[(i - 1) % size]
+    old_succ = solution[(i + 1) % size]
+
     # Get ids of the new predecessor and successor of the moving element
-    new_pred = neighbour[(j - 1) % size]
-    new_succ = neighbour[(j + 1) % size]
+    k = j
+    if i < j: k += 1
+    new_pred = solution[(k-1) % size]
+    new_succ = solution[(k) % size]
+
+    # Remove the moving element from its old position
+    v = solution[i]
 
     # Calculate the value variation in changing the tour
     delta = D[new_pred, v] + D[v, new_succ] - D[new_pred, new_succ]\
             - D[old_pred, v] - D[v, old_succ] + D[old_pred, old_succ]
 
-    return (neighbour, delta)
+    return ((i, j), delta)
+    
+    
+def apply_move(solution, instance_data, (i, j)):
+    v = solution[i]
+    solution.pop(i)
+    solution.insert(j, v)

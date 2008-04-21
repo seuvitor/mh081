@@ -35,7 +35,7 @@ def estimate_median_delta(instance_data):
         solution = generate_random_solution(instance_data)
 
         for j in range(20):
-            (neighbour, delta) = generate_neighbour(solution, instance_data)
+            (move, delta) = generate_random_move(solution, instance_data)
             delta_sample.append(abs(delta))
         
     delta_sample.sort()
@@ -173,12 +173,12 @@ def simulated_annealing(instance_data, params, start_time, current_time):
         T_history.append(P_accept_median_delta)
         
         # Generate a neighbour solution
-        (neighbour, delta) = generate_neighbour(current_solution, instance_data)
+        (move, delta) = generate_random_move(current_solution, instance_data)
         neighbour_value = current_value + delta
         
         # If the neighbour solution is better, move to it
         if (delta * optimization_sense) >= 0:
-            current_solution = neighbour
+            apply_move(current_solution, instance_data, move)
             current_value = neighbour_value
         else:
             # Otherwise, calculate probability of accepting this suboptimal solution
@@ -189,7 +189,7 @@ def simulated_annealing(instance_data, params, start_time, current_time):
             # And move if the suboptimal solution gets lucky
             if random.random() < P_accept_subopt:
                 P_history.append((it, P_accept_subopt))
-                current_solution = neighbour
+                apply_move(current_solution, instance_data, move)
                 current_value = neighbour_value
 
         # Update best solution found until now, if needed
