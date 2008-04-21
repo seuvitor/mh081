@@ -156,11 +156,8 @@ def calculate_value(solution, instance_data):
     return dot(dot(solution,Q),solution)
 
 
-def generate_random_move(solution, instance_data):
+def calculate_move_delta(solution, instance_data, i):
     (num_vars, Q) = instance_data
-    
-    # Get random index for alternating binary value
-    i = random.randint(0, (num_vars - 1))
     
     # Calculate impact of alternating x_i
     delta = dot(solution, Q[i]) * 2
@@ -172,6 +169,16 @@ def generate_random_move(solution, instance_data):
     # Fix double or no counting of the diagonal value by the dot product
     delta += Q[i,i]
 
+    return delta
+
+
+def generate_random_move(solution, instance_data):
+    (num_vars, Q) = instance_data
+    
+    # Get random index for alternating binary value
+    i = random.randint(0, (num_vars - 1))
+    
+    delta = calculate_move_delta(solution, instance_data, i)
     return (i, delta)
 
 

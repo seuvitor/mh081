@@ -215,16 +215,9 @@ def calculate_value(solution, instance_data):
     return value
 
 
-def generate_random_move(solution, instance_data):
+def calculate_move_delta(solution, instance_data, (i, j)):
     (num_vertices, D) = instance_data
-
     size = len(solution)
-    
-    # Get random indexes for swapping
-    i = random.randint(0, (size - 1))
-    j = (i + random.randint(1, size - 2)) % size
-    if j < i:
-        j += 1
     
     # Get ids of the former predecessor and successor of the moving element
     old_pred = solution[(i - 1) % size]
@@ -242,7 +235,20 @@ def generate_random_move(solution, instance_data):
     # Calculate the value variation in changing the tour
     delta = D[new_pred, v] + D[v, new_succ] - D[new_pred, new_succ]\
             - D[old_pred, v] - D[v, old_succ] + D[old_pred, old_succ]
+    
+    return delta
 
+
+def generate_random_move(solution, instance_data):
+    size = len(solution)
+    
+    # Get random indexes for swapping
+    i = random.randint(0, (size - 1))
+    j = (i + random.randint(1, size - 2)) % size
+    if j < i:
+        j += 1
+    
+    delta = calculate_move_delta(solution, instance_data, (i,j))
     return ((i, j), delta)
     
     
