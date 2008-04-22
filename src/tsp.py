@@ -244,8 +244,8 @@ def generate_all_moves(solution, instance_data):
     
     moves = []
     
-    for i in range(0, (size - 1)):
-        for k in range(1, size - 2):
+    for i in range(size):
+        for k in range(1, size - 1):
             j = (i + k) % size
             if j < i:
                 j += 1
@@ -271,3 +271,34 @@ def apply_move(solution, instance_data, (i, j)):
     v = solution[i]
     solution.pop(i)
     solution.insert(j, v)
+
+def is_tabu(tabu_list, solution, (i, j)):
+    size = len(solution)
+    
+    # Get ids of the new predecessor and successor of the moving element
+    k = j
+    if i < j: k += 1
+    new_pred = solution[(k-1) % size]
+    new_succ = solution[(k) % size]
+    
+    v = solution[i]
+
+    # Check if the node is to be placed between vertices of a tabu edge
+    for (t1, t2) in tabu_list:
+        if t1 == v or t2 == v or (t1, t2) == (new_pred, new_succ) or (t1, t2) == (new_succ, new_pred):
+            return True
+    
+    return False
+
+
+def append_tabu(tabu_list, solution, (i, j)):
+    size = len(solution)
+    v = solution[i]
+    
+    # Get ids of the predecessor and successor of the moving element
+    old_pred = solution[(i - 1) % size]
+    old_succ = solution[(i + 1) % size]
+    
+    # The new edge created between the old predecessor and successor is
+    # added to the tabu list, to avoid its early removal
+    tabu_list.append((old_pred, old_succ))
