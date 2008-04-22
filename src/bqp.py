@@ -173,9 +173,7 @@ def calculate_move_delta(solution, instance_data, i):
 
 
 def generate_all_moves(solution, instance_data):
-    (num_vars, Q) = instance_data
-    
-    return range(num_vars)
+    return range(len(solution))
 
 
 def generate_random_move(solution, instance_data):
@@ -190,3 +188,13 @@ def generate_random_move(solution, instance_data):
 
 def apply_move(solution, instance_data, i):
     solution[i] = 1 - solution[i]
+
+
+def is_tabu(tabu_list, solution, i):
+    return (i in tabu_list)
+
+
+def append_tabu(tabu_list, solution, i):
+    # Add the variable whose value changed to the tabu list
+    # to avoid reseting it too early
+    tabu_list.append(i)
