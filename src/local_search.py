@@ -182,6 +182,89 @@ def local_search(instance_data, params, start_time, current_time):
     return (current_solution, current_value, value_history, max_value_history, None, None, it)
 
 
+def tabu_search(instance_data, params, start_time, current_time):
+    (median_delta) = params
+    
+    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
+    
+    # Calculate initial solution
+    current_solution = generate_random_solution(instance_data)
+    current_value = calculate_value(current_solution, instance_data)
+    
+    best_solution = current_solution
+    best_value = current_value
+    
+    optimization_sense = get_problem_optimization_sense()
+    
+    value_history = []
+    best_value_history = []
+    
+    it = 0
+    last_improvement_iteration = 0
+    
+    # Generate all possible moves
+    moves = generate_all_moves(current_solution, instance_data)
+    random.shuffle(moves)
+    
+    tabu_list = []
+    tabu_tenure = get_problem_size(instance_data) / 4
+    
+    # Start local search
+    while (current_time - start_time) < TIME_LIMIT:
+        
+        # Give up if it has been a long time since the last improvement
+        if (it - last_improvement_iteration) > (expected_num_iterations / 10): break
+        
+        # Store historic data
+        value_history.append(current_value)
+        best_value_history.append(best_value)
+        
+        best_move = None
+        best_move_delta = -(INFINITY * optimization_sense)
+        
+        for move in moves:
+            if (is_tabu(tabu_list, current_solution, move)):
+                continue
+            
+            delta = calculate_move_delta(current_solution, instance_data, move)
+            
+            # If the neighbour solution is better than the current, move to it
+            if (delta * optimization_sense) > 0:
+                best_move = move
+                best_move_delta = delta
+                break
+            # Otherwise, keep looking for the best neighbour
+            elif ((delta - best_move_delta) * optimization_sense) > 0:
+                best_move = move
+                best_move_delta = delta
+        
+        # Append to tabu list and move, if any non-tabu movement was available
+        if best_move != None:
+            append_tabu(tabu_list, current_solution, best_move)
+            apply_move(current_solution, instance_data, best_move)
+            current_value = current_value + best_move_delta
+        else:
+            print 'all moves were tabu'
+        
+        # Remove least recent tabu
+        if len(tabu_list) > tabu_tenure:
+            tabu_list.pop(0)
+        
+        # Update best solution found until now, if needed
+        global_improvement = current_value - best_value
+        if (global_improvement * optimization_sense) > 0:
+            last_improvement_iteration = it
+            best_solution = current_solution
+            best_value = current_value
+        
+        # Increment iteration
+        it += 1
+        
+        current_time = time()
+        
+    return (best_solution, best_value, value_history, best_value_history, None, None, it)
+
+
 def simulated_annealing(instance_data, params, start_time, current_time):
     (median_delta) = params
     
@@ -381,6 +464,8 @@ if __name__ == "__main__":
 
     if 'ls' in argv:
         main(local_search)
+    if 'ts' in argv:
+        main(tabu_search)
     elif 'sa' in argv:
         main(simulated_annealing)
     else:
