@@ -161,7 +161,7 @@ def local_search(instance_data, params, start_time, current_time):
         
         # Increment iteration
         it += 1
-		
+        
         # Store historic data
         value_history.append(current_value)
         max_value_history.append(current_value)
@@ -243,8 +243,6 @@ def tabu_search(instance_data, params, start_time, current_time):
             append_tabu(tabu_list, current_solution, best_move)
             apply_move(current_solution, instance_data, best_move)
             current_value = current_value + best_move_delta
-        else:
-            print 'all moves were tabu'
         
         # Remove least recent tabu
         if len(tabu_list) > tabu_tenure:
@@ -462,12 +460,13 @@ if __name__ == "__main__":
         print "$ python local_search.py bqp sa"
         exit()
 
+    algorithm = None
     if 'ls' in argv:
-        main(local_search)
-    if 'ts' in argv:
-        main(tabu_search)
+        algorithm = local_search
+    elif 'ts' in argv:
+        algorithm = tabu_search
     elif 'sa' in argv:
-        main(simulated_annealing)
+        algorithm = simulated_annealing
     else:
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
@@ -475,6 +474,7 @@ if __name__ == "__main__":
 
     #import hotshot
     #prof = hotshot.Profile("hotshot_edi_stats")
-    #prof.runcall(main(simulated_annealing))
+    #prof.runcall(main, algorithm)
     #prof.close()
+    main(algorithm)
     
