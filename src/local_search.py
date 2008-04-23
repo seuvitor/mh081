@@ -31,10 +31,10 @@ class writer:
 def estimate_median_delta(instance_data):
     delta_sample = []
     
-    for i in range(80):
+    for i in range(40):
         solution = generate_random_solution(instance_data)
 
-        for j in range(20):
+        for j in range(10):
             (move, delta) = generate_random_move(solution, instance_data)
             delta_sample.append(abs(delta))
         
@@ -70,52 +70,90 @@ def report_results(instance_name, results, opt_value):
     close()
     
     
-def report_compiled_results(compiled_results, screen_output):
+def report_compiled_results(compiled_results_list):
+    (first_algorithm_name, first_compiled_results, first_screen_output) = compiled_results_list[0]
+    num_instances = len(first_compiled_results)
+    num_algorithms = len(compiled_results_list)
+    
     timestamp = datetime.today()
     
-    report_file_name = get_problem_name() + '_' + timestamp.strftime('%Y-%m-%d_%Hh%M') + '.tex'
-    report_title = get_problem_name() + ' ' + timestamp.strftime('%d/%m/%Y, %Hh%M')
+    # Set file name and title of report
+    report_file_name = get_problem_name()
+    report_title = get_problem_name()
+    for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
+        report_file_name += '_' + algorithm_name
+        report_title += ' ' + algorithm_name
+    report_file_name += '_' + timestamp.strftime('%Y-%m-%d_%Hh%M') + '.tex'
+    report_title += ' ' + timestamp.strftime('%d/%m/%Y %Hh%M')
 
+    # Insert latex header
     text = ''
     text += '\\documentclass{article}\n'\
             '\\usepackage{fullpage}\n'\
             '\\usepackage[brazil]{babel}\n'\
             '\\usepackage[latin1]{inputenc}\n'\
-            '\\title{Relatorio de experimento\\\\\\small{'
+            '\\title{Relatorio de experimento\\\\\\small{\\textbf{'
     text += report_title
-    text += '}}\n'\
+    text += '}}}\n'\
             '\\date{}\n'\
             '\\begin{document}\n'\
             '\\maketitle\n'\
 
+    # Calculate how many tables will be needed
     DEFAUL_TABLE_LINE_LIMIT = 20
     table_limit = DEFAUL_TABLE_LINE_LIMIT
-    
-    num_tables = len(compiled_results) / table_limit
-    if len(compiled_results) % table_limit != 0: num_tables += 1
-    
-    for i in range(num_tables):
-        compiled_results_group = compiled_results[i*table_limit:(i+1)*table_limit]
 
+    num_tables = num_instances / table_limit
+    if num_instances % table_limit != 0: num_tables += 1
+
+    # For each table
+    for i in range(num_tables):
+        #compiled_results_group = compiled_results[i*table_limit:(i+1)*table_limit]
+
+        # Write table header
         table = ''
         table += '\\begin{center}\n'\
-                 '\\begin{tabular}{r r r r r}\n'\
+                 '\\begin{tabular}{| r r '
+        table += ('| r r r ' * num_algorithms)
+        table += '|}\n'\
                  '\\hline\n'\
-                 'instance	&$z*$	&$z$	&gap (\\%)	&time (s) \\\\\n'\
+                 '\\multicolumn{2}{| c |}{} '
+        
+        for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
+            table += ' & \\multicolumn{3}{| c |}{' + algorithm_name + '} '
+        
+        table += '\\\\\n'
+                 
+        table += 'instance	&$z*$	'
+        table += ('&$z$ &gap	&time ' * num_algorithms)
+        table += '\\\\\n'\
                  '\\hline\n'
 
+        # Fill table contents
+        begin = i * table_limit
+        end = min(num_instances, ((i + 1) * table_limit)) - 1
+        
         table_entries = ''
-        for (instance_name, opt_value, best_value, percentual_gap, total_time) in compiled_results_group:
+        for j in range(begin, (end + 1)):
+            (instance_name, opt_value, tmp_v, tmp_g, tmp_t) = first_compiled_results[j]
+            table_entries += '%s & %.0f ' % (instance_name, opt_value)
             
-            gap = opt_value - best_value
+            # Fill columns with results from different algorithms
+            for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
+                
+                (tmp_i, tmp_o, best_value, percentual_gap, total_time) = compiled_results[j]
+                gap = opt_value - best_value
+                
+                if (gap * get_problem_optimization_sense()) > 0:
+                    table_entries += '& %.0f & %.2f & %.2f ' %\
+                        (best_value, percentual_gap, total_time)
+                else:
+                    table_entries += '& \\textbf{%.0f} & %.2f & %.2f ' %\
+                        (best_value, percentual_gap, total_time)
+                        
+            table_entries += '\\\\\n'
             
-            if (gap * get_problem_optimization_sense()) > 0:
-                table_entries += '%s & %.0f & %.0f & %.2f & %.2f \\\\\n' %\
-                    (instance_name, opt_value, best_value, percentual_gap, total_time)
-            else:
-                table_entries += '%s & %.0f & \\textbf{%.0f} & %.2f & %.2f \\\\\n' %\
-                    (instance_name, opt_value, best_value, percentual_gap, total_time)
-                    
+        # Finish table
         table += table_entries
         table += '\\hline\n'\
                  '\\end{tabular}\n'\
@@ -123,17 +161,26 @@ def report_compiled_results(compiled_results, screen_output):
                  '\\clearpage\n'
         
         text += table
+
+    # Insert screen output for each algorithm at the end of the document
+    for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
+        text += '\\center{\\large{\\textbf{Output detalhado do algoritmo ' + algorithm_name + ':}}}\n'
+        text += '\\scriptsize\n'
+        text += '\\begin{verbatim}\n'
+        text += screen_output
+        text += '\\end{verbatim}\n'\
+                '\\clearpage\n'
         
-    text += '\\scriptsize\n'
-    text += '\\begin{verbatim}\n'
-    text += screen_output
-    text += '\\end{verbatim}\n'
-    
     text += '\\end{document}'
 
+    # Save report file
     output_file = open(REPORTS_DIR + report_file_name, 'w')
     output_file.write(text)
     output_file.close()
+    
+    import os
+    (filename_without_ext, ext) = splitext(report_file_name)
+    os.system('latex.bat ' + filename_without_ext)
 
 
 def local_search(instance_data, params, start_time, current_time):
@@ -443,7 +490,7 @@ def main(algorithm):
     sys.stdout = sys.stdout.sysout
 
     # Create complete report
-    report_compiled_results(compiled_results, screen_output)
+    return (compiled_results, screen_output)
     
 
 if __name__ == "__main__":
@@ -460,21 +507,32 @@ if __name__ == "__main__":
         print "$ python local_search.py bqp sa"
         exit()
 
-    algorithm = None
-    if 'ls' in argv:
-        algorithm = local_search
-    elif 'ts' in argv:
-        algorithm = tabu_search
-    elif 'sa' in argv:
-        algorithm = simulated_annealing
-    else:
+    # Check if any algorithm was specified
+    if (not 'ls' in argv) and (not 'ts' in argv) and (not 'sa' in argv):
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
         exit()
+        
+    compiled_results_list = []
+
+    if 'ls' in argv:
+        (compiled_results, screen_output) = main(local_search)
+        compiled_results_list.append(('LS', compiled_results, screen_output))
+        
+    if 'ts' in argv:
+        (compiled_results, screen_output) = main(tabu_search)
+        compiled_results_list.append(('TS', compiled_results, screen_output))
+        
+    if 'sa' in argv:
+        (compiled_results, screen_output) = main(simulated_annealing)
+        compiled_results_list.append(('SA', compiled_results, screen_output))
+        
 
     #import hotshot
     #prof = hotshot.Profile("hotshot_edi_stats")
     #prof.runcall(main, algorithm)
     #prof.close()
-    main(algorithm)
+    report_compiled_results(compiled_results_list)
+    
+
     
