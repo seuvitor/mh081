@@ -219,23 +219,9 @@ def calculate_move_delta(solution, instance_data, (i, j)):
     (num_vertices, D) = instance_data
     size = len(solution)
     
-    # Get ids of the former predecessor and successor of the moving element
-    old_pred = solution[(i - 1) % size]
-    old_succ = solution[(i + 1) % size]
-
-    # Get ids of the new predecessor and successor of the moving element
-    k = j
-    if i < j: k += 1
-    new_pred = solution[(k-1) % size]
-    new_succ = solution[(k) % size]
-
-    # Remove the moving element from its old position
-    v = solution[i]
-
-    # Calculate the value variation in changing the tour
-    delta = D[new_pred, v] + D[v, new_succ] - D[new_pred, new_succ]\
-            - D[old_pred, v] - D[v, old_succ] + D[old_pred, old_succ]
-    
+    a, b = solution[i], solution[(i + 1) % size]
+    d, c = solution[j], solution[(j + 1) % size]
+    delta = D[a, d] + D[b, c] - D[a, b] - D[d, c]
     return delta
 
 
@@ -244,11 +230,9 @@ def generate_all_moves(solution, instance_data):
     
     moves = []
     
-    for i in range(size):
-        for k in range(1, size - 1):
-            j = (i + k) % size
-            if j < i:
-                j += 1
+    for i in range(0, (size - 2)):
+        for k in range(2, (size - max(1, i))): # Avoid equivalent moves
+            j = i + k
             moves.append((i, j))
 
     return moves
@@ -257,48 +241,36 @@ def generate_all_moves(solution, instance_data):
 def generate_random_move(solution, instance_data):
     size = len(solution)
     
-    # Get random indexes for swapping
-    i = random.randint(0, (size - 1))
-    j = (i + random.randint(1, size - 2)) % size
-    if j < i:
-        j += 1
-    
-    delta = calculate_move_delta(solution, instance_data, (i,j))
+    i = random.randint(0, (size - 3))
+    k = random.randint(2, (size - max(2, i + 1))) # Avoid equivalent moves
+    j = i + k
+    delta = calculate_move_delta(solution, instance_data, (i, j))
     return ((i, j), delta)
     
     
 def apply_move(solution, instance_data, (i, j)):
-    v = solution[i]
-    solution.pop(i)
-    solution.insert(j, v)
+    
+    # If needed, swap the indices, so that the subtour is
+    # within the boundaries of the sequence
+    if i > j:
+        (i, j) = (j, i)
+        
+    subtour = solution[(i + 1):(j + 1)]
+    subtour.reverse()
+    solution[(i + 1):(j + 1)] = subtour
+
 
 def is_tabu(tabu_list, solution, (i, j)):
-    size = len(solution)
-    
-    # Get ids of the new predecessor and successor of the moving element
-    k = j
-    if i < j: k += 1
-    new_pred = solution[(k-1) % size]
-    new_succ = solution[(k) % size]
-    
-    v = solution[i]
-
-    # Check if the node is to be placed between vertices of a tabu edge
-    for (t1, t2) in tabu_list:
-        if t1 == v or t2 == v or (t1, t2) == (new_pred, new_succ) or (t1, t2) == (new_succ, new_pred):
+    move = (solution[i], solution[j])
+    for ((a, b), (c, d)) in tabu_list:
+        if move == (a, b) or move == (b, a) or move == (c, d) or move == (d, c):
             return True
-    
     return False
 
 
 def append_tabu(tabu_list, solution, (i, j)):
     size = len(solution)
-    v = solution[i]
     
-    # Get ids of the predecessor and successor of the moving element
-    old_pred = solution[(i - 1) % size]
-    old_succ = solution[(i + 1) % size]
-    
-    # The new edge created between the old predecessor and successor is
-    # added to the tabu list, to avoid its early removal
-    tabu_list.append((old_pred, old_succ))
+    a, b = solution[i], solution[(i + 1) % size]
+    d, c = solution[j], solution[(j + 1) % size]
+    tabu_list.append(((a, b), (c, d)))
