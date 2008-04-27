@@ -183,7 +183,7 @@ def report_compiled_results(compiled_results_list):
     os.system('latex.bat ' + filename_without_ext)
 
 
-def local_search(instance_data, params, start_time, current_time):
+def grasp(instance_data, params, start_time, current_time):
     (median_delta) = params
     
     # Calculate initial solution
@@ -232,7 +232,7 @@ def local_search(instance_data, params, start_time, current_time):
 def tabu_search(instance_data, params, start_time, current_time):
     (median_delta) = params
     
-    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
+    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS / 10
     
     # Calculate initial solution
     current_solution = generate_random_solution(instance_data)
@@ -270,18 +270,26 @@ def tabu_search(instance_data, params, start_time, current_time):
         best_move_delta = -(INFINITY * optimization_sense)
         
         for move in moves:
-            if (is_tabu(tabu_list, current_solution, move)):
-                continue
-            
             delta = calculate_move_delta(current_solution, instance_data, move)
             
             # If the neighbour solution is better than the current, move to it
             if (delta * optimization_sense) > 0:
+                
+                # Ignore if this move is tabu
+                if is_tabu(tabu_list, current_solution, move):
+                    continue
+                    
                 best_move = move
                 best_move_delta = delta
                 break
+            
             # Otherwise, keep looking for the best neighbour
             elif ((delta - best_move_delta) * optimization_sense) > 0:
+                
+                # Ignore if this move is tabu
+                if is_tabu(tabu_list, current_solution, move):
+                    continue
+                    
                 best_move = move
                 best_move_delta = delta
         
@@ -313,7 +321,7 @@ def tabu_search(instance_data, params, start_time, current_time):
 def simulated_annealing(instance_data, params, start_time, current_time):
     (median_delta) = params
     
-    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
+    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS * 2
 
     # Calculate initial solution
     current_solution = generate_random_solution(instance_data)
@@ -508,16 +516,16 @@ if __name__ == "__main__":
         exit()
 
     # Check if any algorithm was specified
-    if (not 'ls' in argv) and (not 'ts' in argv) and (not 'sa' in argv):
+    if (not 'gr' in argv) and (not 'ts' in argv) and (not 'sa' in argv):
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
         exit()
         
     compiled_results_list = []
 
-    if 'ls' in argv:
-        (compiled_results, screen_output) = main(local_search)
-        compiled_results_list.append(('LS', compiled_results, screen_output))
+    if 'gr' in argv:
+        (compiled_results, screen_output) = main(grasp)
+        compiled_results_list.append(('GR', compiled_results, screen_output))
         
     if 'ts' in argv:
         (compiled_results, screen_output) = main(tabu_search)
@@ -527,12 +535,9 @@ if __name__ == "__main__":
         (compiled_results, screen_output) = main(simulated_annealing)
         compiled_results_list.append(('SA', compiled_results, screen_output))
         
-
     #import hotshot
     #prof = hotshot.Profile("hotshot_edi_stats")
-    #prof.runcall(main, algorithm)
+    #(compiled_results, screen_output) = prof.runcall(main, tabu_search)
     #prof.close()
+    
     report_compiled_results(compiled_results_list)
-    
-
-    
