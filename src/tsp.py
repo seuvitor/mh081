@@ -261,9 +261,16 @@ def apply_move(solution, instance_data, (i, j)):
 
 
 def is_tabu(tabu_list, solution, (i, j)):
-    move = (solution[i], solution[j])
-    for ((a, b), (c, d)) in tabu_list:
-        if move == (a, b) or move == (b, a) or move == (c, d) or move == (d, c):
+    size = len(solution)
+    a, b = solution[i], solution[(i + 1) % size]
+    d, c = solution[j], solution[(j + 1) % size]
+    
+    # This movement is tabu if it is trying to construct an edge that was
+    # recently removed, i.e. that is still in the tabu list
+    for tabu in tabu_list:
+        (e1, e2) = tabu
+        if e1 == (a, d) or e1 == (d, a) or e2 == (a, d) or e2 == (d, a)\
+                or e1 == (b, c) or e1 == (c, b) or e2 == (b, c) or e2 == (c, b):
             return True
     return False
 
@@ -273,4 +280,6 @@ def append_tabu(tabu_list, solution, (i, j)):
     
     a, b = solution[i], solution[(i + 1) % size]
     d, c = solution[j], solution[(j + 1) % size]
+    
+    # Append removed edges to the tabu list to avoid their early reconstruction
     tabu_list.append(((a, b), (c, d)))
