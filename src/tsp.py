@@ -61,7 +61,7 @@ def read_instance_data(file):
         for v in range(num_vertices):
             (x_u, y_u) = coordinates[u]
             (x_v, y_v) = coordinates[v]
-            D_uv = sqrt(((x_v - x_u)**2) + ((y_v - y_u)**2))
+            D_uv = round(sqrt(((x_v - x_u)**2) + ((y_v - y_u)**2)))
             D[u,v] = D_uv
             D[v,u] = D_uv
 
