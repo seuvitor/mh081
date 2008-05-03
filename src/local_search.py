@@ -136,6 +136,7 @@ def report_compiled_results(compiled_results_list):
         table_entries = ''
         for j in range(begin, (end + 1)):
             (instance_name, opt_value, tmp_v, tmp_g, tmp_t) = first_compiled_results[j]
+            instance_name = instance_name.replace('_','\_')
             table_entries += '%s & %.0f ' % (instance_name, opt_value)
             
             # Fill columns with results from different algorithms
@@ -440,10 +441,12 @@ def main(algorithm):
             print '--------------------------------------------------------------------'
             print '> INSTANCE:', instance_name
             
-            num_restarts = 0
+            num_restarts = -1
             
             # Run the simulation several times for the instance until the computational time expires
             while (current_time - start_time) < TIME_LIMIT:
+                num_restarts += 1
+                
                 results = algorithm(instance_data, params, start_time, current_time)
                 (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
                 
@@ -460,8 +463,6 @@ def main(algorithm):
                     absolute_gap = best_max_value - opt_value
                     if (absolute_gap * optimization_sense) >= 0:
                         break
-                
-                num_restarts += 1
             
             total_time = current_time - start_time
             
@@ -510,6 +511,8 @@ if __name__ == "__main__":
         from bqp import *
     elif 'tsp' in argv:
         from tsp import *
+    elif 'uctp' in argv:
+        from uctp import *
     else:
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
