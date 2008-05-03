@@ -21,12 +21,12 @@ def get_problem_name():
 
 
 def get_problem_size(instance_data):
-    (num_vertices, D) = instance_data
+    (num_vertices, coordinates, D) = instance_data
     return num_vertices
 
 
 def generate_random_solution(instance_data):
-    (num_vertices, D) = instance_data
+    (num_vertices, coordinates, D) = instance_data
     
     random_solution = range(0, num_vertices)
     random.shuffle(random_solution)
@@ -35,7 +35,7 @@ def generate_random_solution(instance_data):
 
 
 def generate_greedy_randomized_solution(instance_data, k):
-    (num_vertices, D) = instance_data
+    (num_vertices, coordinates, D) = instance_data
     
     remaining_vertices = range(0, num_vertices)
     head = tail = remaining_vertices.pop(0)
@@ -82,6 +82,32 @@ def generate_greedy_randomized_solution(instance_data, k):
     return solution
 
 
+def draw_solution(instance_data, solution):
+    (num_vertices, coordinates, D) = instance_data
+
+    from Tkinter import *
+    root = Tk()
+    
+    (screen_width, screen_height) = (640, 480)
+    canvas = Canvas(root, width=screen_width, height=screen_height, bg='white')
+    
+    size = len(solution)
+    for i in range(size):
+        (x_u, y_u) = coordinates[solution[i]]
+        (x_v, y_v) = coordinates[solution[(i + 1) % size]]
+        canvas.create_line((x_u, y_u, x_v, y_v), fill='black')
+	
+    # Fit the drawing to the screen size
+    (min_x, min_y, max_x, max_y) = canvas.bbox(ALL)
+    x_scale = float(screen_width) / float(max_x - min_x)
+    y_scale = float(screen_height) / float(max_y - min_y)
+    min_scale = min(x_scale, y_scale)
+    canvas.scale(ALL, 0, 0, min_scale/1.5, min_scale/1.5)
+    
+    canvas.pack()
+    root.mainloop()
+
+
 def read_instance_data(file):
 
     # Get num of vertices
@@ -114,7 +140,7 @@ def read_instance_data(file):
             D[u,v] = D_uv
             D[v,u] = D_uv
 
-    instance_data = (num_vertices, D)
+    instance_data = (num_vertices, coordinates, D)
     return instance_data
     
 
@@ -249,7 +275,7 @@ def get_opt_value(instance_name):
 
 
 def calculate_value(solution, instance_data):
-    (num_vertices, D) = instance_data
+    (num_vertices, coordinates, D) = instance_data
     tour = solution
     
     value = 0.0
@@ -265,7 +291,7 @@ def calculate_value(solution, instance_data):
 
 
 def calculate_move_delta(solution, instance_data, (i, j)):
-    (num_vertices, D) = instance_data
+    (num_vertices, coordinates, D) = instance_data
     size = len(solution)
     
     a, b = solution[i], solution[(i + 1) % size]
