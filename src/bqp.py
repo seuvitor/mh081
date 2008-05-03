@@ -33,6 +33,10 @@ def generate_random_solution(instance_data):
     return random_solution
 
 
+def generate_greedy_randomized_solution(instance_data, k):
+    return generate_random_solution(instance_data)
+
+
 def read_instance_data(file):
     line = file.readline()
     [num_vars, num_non_zero] = line.split()

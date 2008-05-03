@@ -188,7 +188,7 @@ def grasp(instance_data, params, start_time, current_time):
     (median_delta) = params
     
     # Calculate initial solution
-    current_solution = generate_random_solution(instance_data)
+    current_solution = generate_greedy_randomized_solution(instance_data, 3)
     current_value = calculate_value(current_solution, instance_data)
     
     optimization_sense = get_problem_optimization_sense()

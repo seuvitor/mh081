@@ -2,6 +2,7 @@ from numpy import *
 import random
 from os.path import basename, splitext
 import copy
+from bisect import bisect_left
 
 
 def get_problem_optimization_sense():
@@ -31,6 +32,54 @@ def generate_random_solution(instance_data):
     random.shuffle(random_solution)
 
     return random_solution
+
+
+def generate_greedy_randomized_solution(instance_data, k):
+    (num_vertices, D) = instance_data
+    
+    remaining_vertices = range(0, num_vertices)
+    head = tail = remaining_vertices.pop(0)
+    
+    # Start solution with the first vertex
+    solution = [head]
+    
+    # At each iteration, add one of the k-nearest vertices to the solution
+    while len(remaining_vertices) > 0:
+        
+        candidates_dists = []
+        candidates_indices = []
+        
+        # Mount lists (of distances and indices) of the k-nearest vertices
+        for i in range(len(remaining_vertices)):
+            v = remaining_vertices[i]
+            dist = min(D[head, v], D[tail, v])
+            
+            # Find place to insert, keeping the list sorted by distances
+            insertion_point = bisect_left(candidates_dists, dist)
+            if (insertion_point < k):
+                candidates_dists.insert(insertion_point, dist)
+                candidates_indices.insert(insertion_point, i)
+            
+            # There must be at most k candidates
+            if len(candidates_dists) > k:
+                candidates_dists.pop(k)
+                candidates_indices.pop(k)
+        
+        # Choose any of the k-nearest vertices
+        nearest_vertex_index = random.choice(candidates_indices)
+        
+        # Remove from the remaining vertices list
+        nearest_vertex = remaining_vertices.pop(nearest_vertex_index)
+        
+        # Decide if the new vertex goes to the head or tail of the solution
+        if D[head, nearest_vertex] < D[tail, nearest_vertex]:
+            solution.insert(0, nearest_vertex)
+            head = nearest_vertex
+        else:
+            solution.append(nearest_vertex)
+            tail = nearest_vertex
+    
+    return solution
 
 
 def read_instance_data(file):
