@@ -24,13 +24,15 @@ def get_problem_name():
 
 def get_problem_size(instance_data):
     (num_events, num_rooms, num_features, num_students,\
-            room_sizes, attendance, room_features, event_features) = instance_data
+            room_sizes, attendance, room_features, event_features,\
+            suitable_rooms, common_attendance) = instance_data
     return num_events
 
 
 def generate_random_solution(instance_data):
     (num_events, num_rooms, num_features, num_students,\
-            room_sizes, attendance, room_features, event_features) = instance_data
+            room_sizes, attendance, room_features, event_features,\
+            suitable_rooms, common_attendance) = instance_data
 
     random_solution = zeros(num_events, dtype=int)
     
@@ -65,10 +67,10 @@ def read_instance_data(file):
         room_sizes[i] = eval(file.readline())
     
     # Read events attendance
-    attendance = zeros((num_students, num_events), dtype=int)
+    attendance = zeros((num_events, num_students), dtype=int)
     for i in range(num_students):
         for j in range(num_events):
-            attendance[i, j] = eval(file.readline())
+            attendance[j, i] = eval(file.readline())
 
     # Read features available in rooms
     room_features = zeros((num_rooms, num_features), dtype=int)
@@ -82,8 +84,28 @@ def read_instance_data(file):
         for j in range(num_features):
             event_features[i, j] = eval(file.readline())
 
+    # Create list of suitable rooms for every event
+    suitable_rooms = [list() for i in range(num_events)]
+    for event in range(num_events):
+        for room in range(num_rooms):
+            room_suits_event = True
+            for feature in range(num_features):
+                if event_features[event, feature] == 1 and room_features[room, feature] != 1:
+                    room_suits_event = False
+                    break
+            if room_suits_event:
+                suitable_rooms[event].append(room)
+    
+    # Calculate common attendace (in number of students) of pairs of events
+    common_attendance = zeros((num_events, num_events), dtype=int)
+    for e1 in range(num_events):
+        for e2 in range(num_events):
+            if e1 < e2:
+                common_attendance[e1, e2] = dot(attendance[e1], attendance[e2])
+    
     instance_data = (num_events, num_rooms, num_features, num_students,\
-                     room_sizes, attendance, room_features, event_features)
+                     room_sizes, attendance, room_features, event_features,\
+                     suitable_rooms, common_attendance)
     
     return instance_data
     
@@ -193,7 +215,8 @@ def greedy_bipartite_match(graph):
 
 def calculate_timeslot_penalty(timeslot_events, instance_data):
     (num_events, num_rooms, num_features, num_students,\
-            room_sizes, attendance, room_features, event_features) = instance_data
+            room_sizes, attendance, room_features, event_features,\
+            suitable_rooms, common_attendance) = instance_data
     
     penalty = 0
     
@@ -202,27 +225,13 @@ def calculate_timeslot_penalty(timeslot_events, instance_data):
         for j in range(len(timeslot_events)):
             if i < j:
                 (e1, e2) = (timeslot_events[i], timeslot_events[j])
-                
-                # Penalize when a student attends to both events
-                for student in range(num_students):
-                    if attendance[student, e1] == 1 and attendance[student, e2] == 1:
-                        penalty += 1
+                # Penalize for every student that attends to both events
+                penalty += common_attendance[e1, e2]
     
     # For each event, add edges to rooms that suits its needs
     E = {}
     for event in timeslot_events:
-        E[event] = list()
-        
-        for room in range(num_rooms):
-            room_suits_event = True
-            
-            for feature in range(num_features):
-                if event_features[event, feature] == 1 and room_features[room, feature] != 1:
-                    room_suits_event = False
-                    break
-            
-            if room_suits_event:
-                E[event].append(room)
+        E[event] = suitable_rooms[event]
     
     # Find matching between events and rooms
     (matching, temp1, temp2) = bipartite_match(E)
@@ -261,7 +270,8 @@ def calculate_timeslot_penalty(timeslot_events, instance_data):
 
 def calculate_value(solution, instance_data):
     (num_events, num_rooms, num_features, num_students,\
-            room_sizes, attendance, room_features, event_features) = instance_data
+            room_sizes, attendance, room_features, event_features,\
+            suitable_rooms, common_attendance) = instance_data
     
     penalty = 0
     
@@ -287,7 +297,8 @@ def calculate_value(solution, instance_data):
 
 def calculate_move_delta(solution, instance_data, (moving_event, jump)):
     (num_events, num_rooms, num_features, num_students,\
-            room_sizes, attendance, room_features, event_features) = instance_data
+            room_sizes, attendance, room_features, event_features,\
+            suitable_rooms, common_attendance) = instance_data
     
     old_timeslot = solution[moving_event]
     new_timeslot = (solution[moving_event] + jump) % NUM_TIMESLOTS
