@@ -54,7 +54,7 @@ def read_instance_data(file):
         coordinates.append((float(x), float(y)))
         line = file.readline()
 
-    D = zeros((num_vertices, num_vertices), dtype=float)
+    D = zeros((num_vertices, num_vertices), dtype=int)
 
     # Calculate distances between cities
     for u in range(num_vertices):
