@@ -213,16 +213,6 @@ def bipartite_match(graph):
         for v in unmatched: recurse(v)
 
 
-def greedy_bipartite_match(graph):
-    matching = {}
-    for u in graph:
-        for v in graph[u]:
-            if v not in matching:
-                matching[v] = u
-                break
-    return matching
-
-
 def calculate_timeslot_penalty(timeslot_events, instance_data):
     (num_events, num_rooms, num_features, num_students,\
             room_sizes, attendance, room_features, event_features,\
@@ -245,7 +235,6 @@ def calculate_timeslot_penalty(timeslot_events, instance_data):
     
     # Find matching between events and rooms
     (matching, temp1, temp2) = bipartite_match(E)
-    #matching = greedy_bipartite_match(E)
     
     # Allocate events appearing in the matching
     events_in_room = list()
