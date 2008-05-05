@@ -353,26 +353,20 @@ def apply_move(solution, instance_data, (moving_event, jump)):
             timeslots_occupation[new_timeslot], instance_data)
 
 
-def is_tabu(tabu_list, solution, (i, j)):
-    size = len(solution)
-    a, b = solution[i], solution[(i + 1) % size]
-    d, c = solution[j], solution[(j + 1) % size]
+def is_tabu(tabu_list, solution, (moving_event, jump)):
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
     
-    # This movement is tabu if it is trying to construct an edge that was
-    # recently removed, i.e. that is still in the tabu list
-    for tabu in tabu_list:
-        (e1, e2) = tabu
-        if e1 == (a, d) or e1 == (d, a) or e2 == (a, d) or e2 == (d, a)\
-                or e1 == (b, c) or e1 == (c, b) or e2 == (b, c) or e2 == (c, b):
-            return True
-    return False
+    new_timeslot = (events_assignments[moving_event] + jump) % NUM_TIMESLOTS
+    
+    # This movement is tabu if it is trying to assign the event to a timeslot
+    # from which it was recently removed, i.e. that is still in the tabu list
+    return ((moving_event, new_timeslot) in tabu_list)
 
 
-def append_tabu(tabu_list, solution, (i, j)):
-    size = len(solution)
+def append_tabu(tabu_list, solution, (moving_event, jump)):
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
     
-    a, b = solution[i], solution[(i + 1) % size]
-    d, c = solution[j], solution[(j + 1) % size]
+    old_timeslot = events_assignments[moving_event]
     
-    # Append removed edges to the tabu list to avoid their early reconstruction
-    tabu_list.append(((a, b), (c, d)))
+    # Append assignment of event to the old timeslot to the tabu list
+    tabu_list.append((moving_event, old_timeslot))
