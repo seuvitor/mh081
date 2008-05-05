@@ -33,13 +33,23 @@ def generate_random_solution(instance_data):
     (num_events, num_rooms, num_features, num_students,\
             room_sizes, attendance, room_features, event_features,\
             suitable_rooms, common_attendance) = instance_data
-
-    random_solution = zeros(num_events, dtype=int)
     
-    for i in range(num_events):
-        random_solution[i] = i % NUM_TIMESLOTS
-
-    return random_solution
+    events_assignments = zeros(num_events, dtype=int)
+    timeslots_occupation = [list() for timeslot in range(NUM_TIMESLOTS)]
+    
+    # Allocate events to timeslots
+    for event in range(num_events):
+        timeslot = event % NUM_TIMESLOTS
+        events_assignments[event] = timeslot
+        timeslots_occupation[timeslot].append(event)
+    
+    # Calculate initial penalties of timeslots
+    timeslots_penalties = zeros(NUM_TIMESLOTS, dtype=int)
+    for timeslot in range(NUM_TIMESLOTS):
+        timeslots_penalties[timeslot] = calculate_timeslot_penalty(\
+                timeslots_occupation[timeslot], instance_data)
+    
+    return (events_assignments, timeslots_occupation, timeslots_penalties)
 
 
 def generate_greedy_randomized_solution(instance_data, k):
@@ -51,10 +61,10 @@ def draw_solution(instance_data, solution):
     
     
 def read_instance_data(file):
-
+    
     # Read number of events, rooms, features and students
     num_events, num_rooms, num_features, num_students = file.readline().split()
-
+    
     # Convert strings to integers
     num_events = int(num_events)
     num_rooms = int(num_rooms)
@@ -108,7 +118,7 @@ def read_instance_data(file):
                      suitable_rooms, common_attendance)
     
     return instance_data
-    
+
 
 def read_problem_set_file(file_path):
     (problem_set_name, ext) = splitext(basename(file_path))
@@ -273,26 +283,10 @@ def calculate_value(solution, instance_data):
             room_sizes, attendance, room_features, event_features,\
             suitable_rooms, common_attendance) = instance_data
     
-    penalty = 0
-    
-    events_in_timeslot = list()
-    for i in range(NUM_TIMESLOTS):
-        events_in_timeslot.append(list())
-    
-    for i in range(num_events):
-        events_in_timeslot[solution[i]].append(i)
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
 
-    for i in range(NUM_TIMESLOTS):
-    
-        # If there is at most one event, there is no constraint violation
-        if len(events_in_timeslot[i]) <= 1:
-            continue
-        
-        # Calculate penalty for breaking constraints in this timeslot
-        timeslot_penalty = calculate_timeslot_penalty(events_in_timeslot[i], instance_data)
-        penalty += timeslot_penalty
-    
-    return penalty
+    # The solution value is the sum of the penalties for each timeslot
+    return sum(timeslots_penalties)
 
 
 def calculate_move_delta(solution, instance_data, (moving_event, jump)):
@@ -300,67 +294,74 @@ def calculate_move_delta(solution, instance_data, (moving_event, jump)):
             room_sizes, attendance, room_features, event_features,\
             suitable_rooms, common_attendance) = instance_data
     
-    old_timeslot = solution[moving_event]
-    new_timeslot = (solution[moving_event] + jump) % NUM_TIMESLOTS
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
     
-    events_in_old_timeslot_before_move = list()
-    events_in_old_timeslot_after_move = list()
-    events_in_new_timeslot_before_move = list()
-    events_in_new_timeslot_after_move = list()
-    
-    for i in range(num_events):
-        
-        if i == moving_event:
-            events_in_old_timeslot_before_move.append(i)
-            events_in_new_timeslot_after_move.append(i)
-        
-        else:
-            if solution[i] == old_timeslot:
-                events_in_old_timeslot_before_move.append(i)
-                events_in_old_timeslot_after_move.append(i)
-                    
-            if solution[i] == new_timeslot:
-                events_in_new_timeslot_after_move.append(i)
-                events_in_new_timeslot_before_move.append(i)
+    old_timeslot = events_assignments[moving_event]
+    new_timeslot = (old_timeslot + jump) % NUM_TIMESLOTS
     
     delta = 0
+    
+    delta -= timeslots_penalties[old_timeslot]
+    delta -= timeslots_penalties[new_timeslot]
 
-    # Calculate change in costs of timeslots involved in the movement
-    if len(events_in_old_timeslot_before_move) > 1:
-        delta -= calculate_timeslot_penalty(events_in_old_timeslot_before_move, instance_data)
-    if len(events_in_new_timeslot_before_move) > 1:
-        delta -= calculate_timeslot_penalty(events_in_new_timeslot_before_move, instance_data)
-    if len(events_in_old_timeslot_after_move) > 1:
-        delta += calculate_timeslot_penalty(events_in_old_timeslot_after_move, instance_data)
-    if len(events_in_new_timeslot_after_move) > 1:
-        delta += calculate_timeslot_penalty(events_in_new_timeslot_after_move, instance_data)
-
+    changed_old_timeslot = list(timeslots_occupation[old_timeslot])
+    changed_old_timeslot.remove(moving_event)
+    
+    changed_new_timeslot = list(timeslots_occupation[new_timeslot])
+    insertion_index = bisect_left(timeslots_occupation[new_timeslot], moving_event)
+    changed_new_timeslot.insert(insertion_index, moving_event)
+    
+    delta += calculate_timeslot_penalty(changed_old_timeslot, instance_data)
+    delta += calculate_timeslot_penalty(changed_new_timeslot, instance_data)
+    
     return delta
 
 
 def generate_all_moves(solution, instance_data):
-    size = len(solution)
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+    
+    num_events = len(events_assignments)
     
     moves = []
     
-    for moving_event in range(size):
-        for jump in range(1, size - 1):
+    for moving_event in range(num_events):
+        for jump in range(1, NUM_TIMESLOTS - 1):
             moves.append((moving_event, jump))
 
     return moves
 
 
 def generate_random_move(solution, instance_data):
-    size = len(solution)
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
     
-    moving_event = random.randint(0, (size - 1))
-    jump = random.randint(1, (size - 2))
+    num_events = len(events_assignments)
+    
+    moving_event = random.randint(0, (num_events - 1))
+    jump = random.randint(1, (NUM_TIMESLOTS - 2))
     delta = calculate_move_delta(solution, instance_data, (moving_event, jump))
     return ((moving_event, jump), delta)
     
     
 def apply_move(solution, instance_data, (moving_event, jump)):
-    solution[moving_event] = (solution[moving_event] + jump) % NUM_TIMESLOTS
+    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+    
+    old_timeslot = events_assignments[moving_event]
+    new_timeslot = (old_timeslot + jump) % NUM_TIMESLOTS
+    
+    # Assign the event to the new timeslot
+    events_assignments[moving_event] = new_timeslot
+    
+    # Update timeslots occupation
+    timeslots_occupation[old_timeslot].remove(moving_event)
+
+    insertion_index = bisect_left(timeslots_occupation[new_timeslot], moving_event)
+    timeslots_occupation[new_timeslot].insert(insertion_index, moving_event)
+    
+    # Recalculate penalties for changed timeslots
+    timeslots_penalties[old_timeslot] = calculate_timeslot_penalty(\
+            timeslots_occupation[old_timeslot], instance_data)
+    timeslots_penalties[new_timeslot] = calculate_timeslot_penalty(\
+            timeslots_occupation[new_timeslot], instance_data)
 
 
 def is_tabu(tabu_list, solution, (i, j)):
