@@ -96,7 +96,7 @@ def draw_solution(instance_data, solution):
         (x_u, y_u) = coordinates[solution[i]]
         (x_v, y_v) = coordinates[solution[(i + 1) % size]]
         canvas.create_line((x_u, y_u, x_v, y_v), fill='black')
-	
+    
     # Fit the drawing to the screen size
     (min_x, min_y, max_x, max_y) = canvas.bbox(ALL)
     x_scale = float(screen_width) / float(max_x - min_x)

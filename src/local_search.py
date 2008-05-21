@@ -36,7 +36,7 @@ def estimate_median_delta(instance_data):
     
     for i in range(40):
         solution = generate_random_solution(instance_data)
-	
+        
         for j in range(10):
             (move, delta) = generate_random_move(solution, instance_data)
             delta_sample.append(abs(delta))
