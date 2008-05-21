@@ -2,10 +2,11 @@ from numpy import *
 import random
 from os.path import basename, splitext
 import copy
-from bisect import bisect_left
+import bisect
 
+INFINITY = 1e300000
 NUM_TIMESLOTS = 45
- 
+
 
 def get_problem_optimization_sense():
     MIN = -1
@@ -42,14 +43,16 @@ def generate_random_solution(instance_data):
         timeslot = event % NUM_TIMESLOTS
         events_assignments[event] = timeslot
         timeslots_occupation[timeslot].append(event)
-    
+
+    causing_hcv = zeros(num_events, dtype=int)
+
     # Calculate initial penalties of timeslots
     timeslots_penalties = zeros(NUM_TIMESLOTS, dtype=int)
     for timeslot in range(NUM_TIMESLOTS):
         timeslots_penalties[timeslot] = calculate_timeslot_penalty(\
-                timeslots_occupation[timeslot], instance_data)
-    
-    return (events_assignments, timeslots_occupation, timeslots_penalties)
+                timeslots_occupation[timeslot], instance_data, causing_hcv)
+
+    return (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv)
 
 
 def generate_greedy_randomized_solution(instance_data, k):
@@ -213,7 +216,7 @@ def bipartite_match(graph):
         for v in unmatched: recurse(v)
 
 
-def calculate_timeslot_penalty(timeslot_events, instance_data):
+def calculate_timeslot_penalty(timeslot_events, instance_data, causing_hcv = None):
     (num_events, num_rooms, num_features, num_students,\
             room_sizes, attendance, room_features, event_features,\
             suitable_rooms, common_attendance) = instance_data
@@ -227,6 +230,9 @@ def calculate_timeslot_penalty(timeslot_events, instance_data):
                 (e1, e2) = (timeslot_events[i], timeslot_events[j])
                 # Penalize for every student that attends to both events
                 penalty += common_attendance[e1, e2]
+                if causing_hcv != None and common_attendance[e1, e2] > 0:
+                    causing_hcv[e1] = 1
+                    causing_hcv[e2] = 1
     
     # For each event, add edges to rooms that suits its needs
     E = {}
@@ -272,101 +278,217 @@ def calculate_value(solution, instance_data):
             room_sizes, attendance, room_features, event_features,\
             suitable_rooms, common_attendance) = instance_data
     
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
 
     # The solution value is the sum of the penalties for each timeslot
     return sum(timeslots_penalties)
 
 
-def calculate_move_delta(solution, instance_data, (moving_event, jump)):
+def calculate_move_delta(solution, instance_data, (move_type, move_data)):
     (num_events, num_rooms, num_features, num_students,\
             room_sizes, attendance, room_features, event_features,\
             suitable_rooms, common_attendance) = instance_data
     
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
-    
-    old_timeslot = events_assignments[moving_event]
-    new_timeslot = (old_timeslot + jump) % NUM_TIMESLOTS
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
     
     delta = 0
     
-    delta -= timeslots_penalties[old_timeslot]
-    delta -= timeslots_penalties[new_timeslot]
-
-    changed_old_timeslot = list(timeslots_occupation[old_timeslot])
-    changed_old_timeslot.remove(moving_event)
+    if move_type == 'INS':
+        (moving_event, jump) = move_data
+        old_timeslot = events_assignments[moving_event]
+        new_timeslot = (old_timeslot + jump) % NUM_TIMESLOTS
+        
+        # Return infity so that this move is forbiden
+        if len(timeslots_occupation[new_timeslot]) >= num_rooms or\
+                causing_hcv[moving_event] == 0:
+            return INFINITY
+        
+        delta -= timeslots_penalties[old_timeslot]
+        delta -= timeslots_penalties[new_timeslot]
+        
+        changed_old_timeslot = list(timeslots_occupation[old_timeslot])
+        changed_old_timeslot.remove(moving_event)
+        
+        changed_new_timeslot = list(timeslots_occupation[new_timeslot])
+        bisect.insort_left(changed_new_timeslot, moving_event)
+        
+        delta += calculate_timeslot_penalty(changed_old_timeslot, instance_data)
+        delta += calculate_timeslot_penalty(changed_new_timeslot, instance_data)
     
-    changed_new_timeslot = list(timeslots_occupation[new_timeslot])
-    insertion_index = bisect_left(timeslots_occupation[new_timeslot], moving_event)
-    changed_new_timeslot.insert(insertion_index, moving_event)
+    elif move_type == 'SWAP':
+        (event_1, event_2) = move_data
+        timeslot_1 = events_assignments[event_1]
+        timeslot_2 = events_assignments[event_2]
     
-    delta += calculate_timeslot_penalty(changed_old_timeslot, instance_data)
-    delta += calculate_timeslot_penalty(changed_new_timeslot, instance_data)
+        # Return infity so that this move is forbiden
+        if timeslot_1 == timeslot_2 or\
+                causing_hcv[event_1] == 0:# or causing_hcv[event_2] == 0:
+            return INFINITY
+    
+        delta -= timeslots_penalties[timeslot_1]
+        delta -= timeslots_penalties[timeslot_2]
+        
+        changed_timeslot_1 = list(timeslots_occupation[timeslot_1])
+        changed_timeslot_1.remove(event_1)
+        bisect.insort_left(changed_timeslot_1, event_2)
+        
+        changed_timeslot_2 = list(timeslots_occupation[timeslot_2])
+        changed_timeslot_2.remove(event_2)
+        bisect.insort_left(changed_timeslot_2, event_1)
+        
+        delta += calculate_timeslot_penalty(changed_timeslot_1, instance_data)
+        delta += calculate_timeslot_penalty(changed_timeslot_2, instance_data)
     
     return delta
 
 
 def generate_all_moves(solution, instance_data):
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
     
     num_events = len(events_assignments)
     
     moves = []
-    
+
+    # Generate all moves of type INS
+    ins_moves = []
     for moving_event in range(num_events):
         for jump in range(1, NUM_TIMESLOTS - 1):
-            moves.append((moving_event, jump))
-
+            ins_moves.append(('INS', (moving_event, jump)))
+    random.shuffle(ins_moves)
+    moves.extend(ins_moves)
+    
+    # Generate all moves of type SWAP
+    swap_moves = []
+    for e1 in range(num_events):
+        for e2 in range(num_events):
+            if e1 < e2:
+                swap_moves.append(('SWAP', (e1, e2)))
+    random.shuffle(swap_moves)
+    moves.extend(swap_moves)
+    
     return moves
 
 
 def generate_random_move(solution, instance_data):
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
     
     num_events = len(events_assignments)
     
-    moving_event = random.randint(0, (num_events - 1))
-    jump = random.randint(1, (NUM_TIMESLOTS - 2))
-    delta = calculate_move_delta(solution, instance_data, (moving_event, jump))
-    return ((moving_event, jump), delta)
+    move = None
+    
+    # Generate move of type INS with probability 0.8
+    if random.random() < 0.8:
+        moving_event = random.randint(0, (num_events - 1))
+        jump = random.randint(1, (NUM_TIMESLOTS - 2))
+        move = ('INS', (moving_event, jump))
+    
+    # Otherwise, genereate move of type SWAP
+    else:
+        event_1 = random.randint(0, (num_events - 1))
+        event_2 = (event_1 + random.randint(1, (num_events - 1))) % num_events
+        if event_1 < event_2:
+            move = ('SWAP', (event_1, event_2))
+        else:
+            if event_1 == event_2: print 'EQUAL SWAP:',(event_1, event_2)
+            move = ('SWAP', (event_2, event_1))
+    
+    delta = calculate_move_delta(solution, instance_data, move)
+    return (move, delta)
     
     
-def apply_move(solution, instance_data, (moving_event, jump)):
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+def apply_move(solution, instance_data, (move_type, move_data)):
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
     
-    old_timeslot = events_assignments[moving_event]
-    new_timeslot = (old_timeslot + jump) % NUM_TIMESLOTS
+    if move_type == 'INS':
+        (moving_event, jump) = move_data
+        
+        old_timeslot = events_assignments[moving_event]
+        new_timeslot = (old_timeslot + jump) % NUM_TIMESLOTS
+        
+        # Assign the event to the new timeslot
+        events_assignments[moving_event] = new_timeslot
+        
+        # Update timeslots occupation
+        timeslots_occupation[old_timeslot].remove(moving_event)
+        bisect.insort_left(timeslots_occupation[new_timeslot], moving_event)
+        
+        # Reset hcv flag for events in timeslots affected by the move
+        for event in timeslots_occupation[old_timeslot] + timeslots_occupation[new_timeslot]:
+            causing_hcv[event] = 0
+        
+        # Recalculate penalties for changed timeslots
+        timeslots_penalties[old_timeslot] = calculate_timeslot_penalty(\
+                timeslots_occupation[old_timeslot], instance_data, causing_hcv)
+        timeslots_penalties[new_timeslot] = calculate_timeslot_penalty(\
+                timeslots_occupation[new_timeslot], instance_data, causing_hcv)
     
-    # Assign the event to the new timeslot
-    events_assignments[moving_event] = new_timeslot
-    
-    # Update timeslots occupation
-    timeslots_occupation[old_timeslot].remove(moving_event)
+    elif move_type == 'SWAP':
+        (event_1, event_2) = move_data
+        
+        timeslot_1 = events_assignments[event_1]
+        timeslot_2 = events_assignments[event_2]
+        
+        # Assign the event to the new timeslot
+        events_assignments[event_1] = timeslot_2
+        events_assignments[event_2] = timeslot_1
+        
+        #print 'old timeslots:', timeslots_occupation[timeslot_1], timeslots_occupation[timeslot_2]
+        
+        # Update timeslots occupation
+        timeslots_occupation[timeslot_1].remove(event_1)
+        bisect.insort_left(timeslots_occupation[timeslot_2], event_1)
+        timeslots_occupation[timeslot_2].remove(event_2)
+        bisect.insort_left(timeslots_occupation[timeslot_1], event_2)
+        
+        #print 'new timeslots:', timeslots_occupation[timeslot_1], timeslots_occupation[timeslot_2]
+        
+        # Reset hcv flag for events in timeslots affected by the move
+        for event in timeslots_occupation[timeslot_1] + timeslots_occupation[timeslot_2]:
+            causing_hcv[event] = 0
+        
+        # Recalculate penalties for changed timeslots
+        timeslots_penalties[timeslot_1] = calculate_timeslot_penalty(\
+                timeslots_occupation[timeslot_1], instance_data, causing_hcv)
+        timeslots_penalties[timeslot_2] = calculate_timeslot_penalty(\
+                timeslots_occupation[timeslot_2], instance_data, causing_hcv)
 
-    insertion_index = bisect_left(timeslots_occupation[new_timeslot], moving_event)
-    timeslots_occupation[new_timeslot].insert(insertion_index, moving_event)
+
+def is_tabu(tabu_list, solution, (move_type, move_data)):
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
     
-    # Recalculate penalties for changed timeslots
-    timeslots_penalties[old_timeslot] = calculate_timeslot_penalty(\
-            timeslots_occupation[old_timeslot], instance_data)
-    timeslots_penalties[new_timeslot] = calculate_timeslot_penalty(\
-            timeslots_occupation[new_timeslot], instance_data)
+    if move_type == 'INS':
+        (moving_event, jump) = move_data
+        
+        new_timeslot = (events_assignments[moving_event] + jump) % NUM_TIMESLOTS
+        
+        # This movement is tabu if it is trying to assign the event to a timeslot
+        # from which it was recently removed, i.e. that is still in the tabu list
+        return (('INS', moving_event, new_timeslot) in tabu_list)
+    
+    elif move_type == 'SWAP':
+        (event_1, event_2) = move_data
+        
+        if event_1 <= event_2:
+            return ('SWAP', event_1, event_2) in tabu_list
+        else:
+            return ('SWAP', event_2, event_1) in tabu_list
 
 
-def is_tabu(tabu_list, solution, (moving_event, jump)):
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
+def append_tabu(tabu_list, solution, (move_type, move_data)):
+    (events_assignments, timeslots_occupation, timeslots_penalties, causing_hcv) = solution
     
-    new_timeslot = (events_assignments[moving_event] + jump) % NUM_TIMESLOTS
+    if move_type == 'INS':
+        (moving_event, jump) = move_data
+        
+        old_timeslot = events_assignments[moving_event]
+        
+        # Append assignment of event to the old timeslot to the tabu list
+        tabu_list.append(('INS', moving_event, old_timeslot))
     
-    # This movement is tabu if it is trying to assign the event to a timeslot
-    # from which it was recently removed, i.e. that is still in the tabu list
-    return ((moving_event, new_timeslot) in tabu_list)
-
-
-def append_tabu(tabu_list, solution, (moving_event, jump)):
-    (events_assignments, timeslots_occupation, timeslots_penalties) = solution
-    
-    old_timeslot = events_assignments[moving_event]
-    
-    # Append assignment of event to the old timeslot to the tabu list
-    tabu_list.append((moving_event, old_timeslot))
+    elif move_type == 'SWAP':
+        (event_1, event_2) = move_data
+        
+        if event_1 <= event_2:
+            tabu_list.append(('SWAP', event_1, event_2))
+        else:
+            tabu_list.append(('SWAP', event_2, event_1))
