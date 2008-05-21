@@ -177,7 +177,9 @@ def calculate_move_delta(solution, instance_data, i):
 
 
 def generate_all_moves(solution, instance_data):
-    return range(len(solution))
+    moves = range(len(solution))
+    random.shuffle(moves)
+    return moves
 
 
 def generate_random_move(solution, instance_data):

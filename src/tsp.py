@@ -309,7 +309,8 @@ def generate_all_moves(solution, instance_data):
         for k in range(2, (size - max(1, i))): # Avoid equivalent moves
             j = i + k
             moves.append((i, j))
-
+    
+    random.shuffle(moves)
     return moves
 
 
