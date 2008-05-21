@@ -36,7 +36,7 @@ def estimate_median_delta(instance_data):
     
     for i in range(40):
         solution = generate_random_solution(instance_data)
-
+	
         for j in range(10):
             (move, delta) = generate_random_move(solution, instance_data)
             delta_sample.append(abs(delta))
@@ -187,9 +187,7 @@ def report_compiled_results(compiled_results_list):
     os.system('latex.bat ' + filename_without_ext)
 
 
-def grasp(instance_data, params, start_time, current_time):
-    (median_delta) = params
-    
+def grasp(instance_data, start_time, current_time):
     # Calculate initial solution
     current_solution = generate_greedy_randomized_solution(instance_data, 3)
     current_value = calculate_value(current_solution, instance_data)
@@ -232,9 +230,7 @@ def grasp(instance_data, params, start_time, current_time):
     return (current_solution, current_value, value_history, max_value_history, None, None, it)
 
 
-def tabu_search(instance_data, params, start_time, current_time):
-    (median_delta) = params
-    
+def tabu_search(instance_data, start_time, current_time):
     expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS / 10
     
     # Calculate initial solution
@@ -321,8 +317,9 @@ def tabu_search(instance_data, params, start_time, current_time):
     return (best_solution, best_value, value_history, best_value_history, None, None, it)
 
 
-def simulated_annealing(instance_data, params, start_time, current_time):
-    (median_delta) = params
+def simulated_annealing(instance_data, start_time, current_time):
+    # Calculate median delta
+    median_delta = estimate_median_delta(instance_data)
     
     expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
 
@@ -414,11 +411,11 @@ def main(algorithm):
     print '> ALGORITHM SETUP:'
     print 'Number of iterations (per instance size unit):', str(DEFAULT_NUM_ITERATIONS)
     print 'Time limit (seconds):', TIME_LIMIT
-
+    
     for file_name in problem_set_files:
         file_path = instances_dir + file_name
         (problem_set_name, ext) = splitext(basename(file_path))
-
+        
         # Read problem set from the input file
         problem_set = read_problem_set_file(file_path)
         
@@ -430,10 +427,6 @@ def main(algorithm):
             
             start_time = time()
             current_time = start_time
-            
-            # Calculate good simulation params
-            median_delta = estimate_median_delta(instance_data)
-            params = (median_delta)
             
             # Get optimal value
             opt_value = get_opt_value(instance_name)
@@ -450,7 +443,7 @@ def main(algorithm):
             while (current_time - start_time) < TIME_LIMIT:
                 num_restarts += 1
                 
-                results = algorithm(instance_data, params, start_time, current_time)
+                results = algorithm(instance_data, start_time, current_time)
                 (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
                 
                 current_time = time()
