@@ -278,7 +278,7 @@ def calculate_value(solution, instance_data):
     (num_vertices, coordinates, D) = instance_data
     tour = solution
     
-    value = 0.0
+    value = 0
     
     # Add weights of edges linking consecutive vertices in the tour
     for i in range(len(tour) - 1):
