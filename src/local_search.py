@@ -2,12 +2,15 @@ REPORTS_DIR = '../reports/'
 LIB_DIR = '../lib'
 
 INFINITY = 1e300000
-DEFAULT_NUM_ITERATIONS = 400
+DEFAULT_NUM_ITERATIONS = 1000
 TIME_LIMIT = 60
 
 import sys
 from os.path import abspath
 sys.path.append(abspath(LIB_DIR))
+
+import psyco
+psyco.full()
 
 from pylab import *
 from datetime import datetime
@@ -202,7 +205,6 @@ def grasp(instance_data, params, start_time, current_time):
     
     # Generate all possible moves
     moves = generate_all_moves(current_solution, instance_data)
-    random.shuffle(moves)
     
     # Start local search
     while improving and (current_time - start_time) < TIME_LIMIT:
@@ -322,7 +324,7 @@ def tabu_search(instance_data, params, start_time, current_time):
 def simulated_annealing(instance_data, params, start_time, current_time):
     (median_delta) = params
     
-    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS * 2
+    expected_num_iterations = get_problem_size(instance_data) * DEFAULT_NUM_ITERATIONS
 
     # Calculate initial solution
     current_solution = generate_random_solution(instance_data)
@@ -369,6 +371,7 @@ def simulated_annealing(instance_data, params, start_time, current_time):
             P_accept_subopt = median_delta * P_accept_median_delta / (-delta * optimization_sense)
             
             if P_accept_subopt > 1.0: P_accept_subopt = 1.0
+            if (delta * optimization_sense) == INFINITY: P_accept_subopt = 0.0
             
             # And move if the suboptimal solution gets lucky
             if random.random() < P_accept_subopt:
@@ -523,24 +526,25 @@ if __name__ == "__main__":
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
         exit()
-        
+    
+    #import hotshot
+    #prof = hotshot.Profile("hotshot_edi_stats")
+    
     compiled_results_list = []
 
     if 'gr' in argv:
+        #(compiled_results, screen_output) = prof.runcall(main, grasp)
         (compiled_results, screen_output) = main(grasp)
         compiled_results_list.append(('GR', compiled_results, screen_output))
-        
     if 'ts' in argv:
+        #(compiled_results, screen_output) = prof.runcall(main, tabu_search)
         (compiled_results, screen_output) = main(tabu_search)
         compiled_results_list.append(('TS', compiled_results, screen_output))
-        
     if 'sa' in argv:
+        #(compiled_results, screen_output) = prof.runcall(main, simulated_annealing)
         (compiled_results, screen_output) = main(simulated_annealing)
         compiled_results_list.append(('SA', compiled_results, screen_output))
-        
-    #import hotshot
-    #prof = hotshot.Profile("hotshot_edi_stats")
-    #(compiled_results, screen_output) = prof.runcall(main, tabu_search)
+    
     #prof.close()
     
     report_compiled_results(compiled_results_list)
