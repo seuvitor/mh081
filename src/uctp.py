@@ -389,7 +389,7 @@ def generate_random_move(solution, instance_data):
         if event_1 < event_2:
             move = ('SWAP', (event_1, event_2))
         else:
-            if event_1 == event_2: print 'EQUAL SWAP:',(event_1, event_2)
+            if event_1 == event_2:
             move = ('SWAP', (event_2, event_1))
     
     delta = calculate_move_delta(solution, instance_data, move)
@@ -432,15 +432,11 @@ def apply_move(solution, instance_data, (move_type, move_data)):
         events_assignments[event_1] = timeslot_2
         events_assignments[event_2] = timeslot_1
         
-        #print 'old timeslots:', timeslots_occupation[timeslot_1], timeslots_occupation[timeslot_2]
-        
         # Update timeslots occupation
         timeslots_occupation[timeslot_1].remove(event_1)
         bisect.insort_left(timeslots_occupation[timeslot_2], event_1)
         timeslots_occupation[timeslot_2].remove(event_2)
         bisect.insort_left(timeslots_occupation[timeslot_1], event_2)
-        
-        #print 'new timeslots:', timeslots_occupation[timeslot_1], timeslots_occupation[timeslot_2]
         
         # Reset hcv flag for events in timeslots affected by the move
         for event in timeslots_occupation[timeslot_1] + timeslots_occupation[timeslot_2]:
