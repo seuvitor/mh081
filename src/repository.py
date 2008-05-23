@@ -91,6 +91,13 @@ def get_events():
     return [event for event in query]
 
 
+def get_event(event_id):
+    from sqlalchemy.orm import eagerload
+    session = Session()
+    event = session.query(Event).get(event_id)
+    return event
+
+
 def get_rooms():
     from sqlalchemy.orm import eagerload
     session = Session()
