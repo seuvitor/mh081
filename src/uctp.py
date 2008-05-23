@@ -27,6 +27,63 @@ class UCTP():
         return 'UCTP'
     
     
+    def make_instance_from_core_classes(self, students, events, rooms, features):
+        # Get sizes of collections
+        num_events = len(events)
+        num_rooms = len(rooms)
+        num_features = len(features)
+        num_students = len(students)
+        
+        # Get room sizes
+        room_sizes = zeros(num_rooms, dtype=int)
+        for room in rooms:
+            room_sizes[room.id] = room.capacity
+        
+        # Get events attendance
+        attendance = zeros((num_events, num_students), dtype=int)
+        for student in students:
+            for event in student.events:
+                attendance[event.id, student.id] = 1
+        
+        # Get features available in rooms
+        room_features = zeros((num_rooms, num_features), dtype=int)
+        for room in rooms:
+            for feature in room.features:
+                room_features[room.id, feature.id] = 1
+        
+        # Get features required by events
+        event_features = zeros((num_events, num_features), dtype=int)
+        for event in events:
+            for feature in event.features:
+                event_features[event.id, feature.id] = 1
+        
+        # Create list of suitable rooms for every event
+        suitable_rooms = [list() for i in range(num_events)]
+        for event in range(num_events):
+            for room in range(num_rooms):
+                room_suits_event = True
+                for feature in range(num_features):
+                    if event_features[event, feature] == 1 and room_features[room, feature] != 1:
+                        room_suits_event = False
+                        break
+                if room_suits_event:
+                    suitable_rooms[event].append(room)
+        
+        # Calculate common attendace (in number of students) of pairs of events
+        common_attendance = zeros((num_events, num_events), dtype=int)
+        for e1 in range(num_events):
+            for e2 in range(num_events):
+                if e1 < e2:
+                    common_attendance[e1, e2] = dot(attendance[e1], attendance[e2])
+        
+        instance = UCTPInstance(self, 'test_instance',\
+                num_events, num_rooms, num_features, num_students,\
+                room_sizes, attendance, room_features, event_features,\
+                suitable_rooms, common_attendance)
+        
+        return instance
+
+    
     def read_instance_data(self, file):
         
         # Read number of events, rooms, features and students
