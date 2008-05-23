@@ -9,22 +9,7 @@ INFINITY = 1e300000
 NUM_TIMESLOTS = 45
 
 
-class UCTP():
-    
-    
-    def get_problem_optimization_sense(self):
-        MIN = -1
-        MAX = 1
-        
-        return MIN
-    
-    
-    def get_instances_dir(self):
-        return '../uctp_instances/'
-    
-    
-    def get_problem_name(self):
-        return 'UCTP'
+class UCTPFacade():
     
     
     def make_instance_from_core_classes(self, students, events, rooms, features):
@@ -76,12 +61,55 @@ class UCTP():
                 if e1 < e2:
                     common_attendance[e1, e2] = dot(attendance[e1], attendance[e2])
         
-        instance = UCTPInstance(self, 'test_instance',\
+        instance = UCTPInstance(UCTP(), 'test_instance',\
                 num_events, num_rooms, num_features, num_students,\
                 room_sizes, attendance, room_features, event_features,\
                 suitable_rooms, common_attendance)
         
         return instance
+    
+    
+    def solution_to_timetable(self, solution):
+        
+        num_rooms = solution.instance.num_rooms
+        timetable = [[[] for room in range(num_rooms)] for timeslot in range(NUM_TIMESLOTS)]
+        
+        for timeslot in range(NUM_TIMESLOTS):
+            timeslot_events = solution.timeslots_occupation[timeslot]
+            room_allocation = solution.instance.derive_room_allocation(timeslot_events)
+            for room in range(num_rooms):
+                events = room_allocation[room]
+                for event in events:
+                    timetable[timeslot][room].append(event)
+        
+        return timetable
+    
+    
+    def results_to_timetable(self, results):
+        (best_solution, max_value, value_history, max_value_history, T_history,\
+                P_history, num_iterations) = results
+        
+        return self.solution_to_timetable(best_solution)
+
+
+class UCTP():
+    
+    
+    def get_problem_optimization_sense(self):
+        MIN = -1
+        MAX = 1
+        
+        return MIN
+    
+    
+    def get_instances_dir(self):
+        return '../uctp_instances/'
+    
+    
+    def get_problem_name(self):
+        return 'UCTP'
+    
+    
 
     
     def read_instance_data(self, file):
@@ -317,20 +345,7 @@ class UCTPInstance():
             for v in unmatched: recurse(v)
     
     
-    def calculate_timeslot_penalty(self, timeslot_events, causing_hcv = None):
-        penalty = 0
-        
-        # For each pair of events in the timeslot
-        for i in range(len(timeslot_events)):
-            for j in range(len(timeslot_events)):
-                if i < j:
-                    (e1, e2) = (timeslot_events[i], timeslot_events[j])
-                    # Penalize for every student that attends to both events
-                    penalty += self.common_attendance[e1, e2]
-                    if causing_hcv != None and self.common_attendance[e1, e2] > 0:
-                        causing_hcv[e1] = 1
-                        causing_hcv[e2] = 1
-        
+    def derive_room_allocation(self, timeslot_events):
         # For each event, add edges to rooms that suits its needs
         E = {}
         for event in timeslot_events:
@@ -362,6 +377,25 @@ class UCTPInstance():
                 events_in_room[best_room].append(event)
                 allocated_events.add(event)
                 
+        return events_in_room
+    
+    
+    def calculate_timeslot_penalty(self, timeslot_events, causing_hcv = None):
+        penalty = 0
+        
+        # For each pair of events in the timeslot
+        for i in range(len(timeslot_events)):
+            for j in range(len(timeslot_events)):
+                if i < j:
+                    (e1, e2) = (timeslot_events[i], timeslot_events[j])
+                    # Penalize for every student that attends to both events
+                    penalty += self.common_attendance[e1, e2]
+                    if causing_hcv != None and self.common_attendance[e1, e2] > 0:
+                        causing_hcv[e1] = 1
+                        causing_hcv[e2] = 1
+        
+        events_in_room = self.derive_room_allocation(timeslot_events)
+        
         # Penalize events scheduled to the same timeslot and room
         for room_events in events_in_room:
             if len(room_events) > 1:
