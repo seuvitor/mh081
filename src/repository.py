@@ -118,11 +118,11 @@ def add_student(id):
 
 def main():
     
-    if (raw_input("create tables? ") == "yes"):
+    if (raw_input("create tables? ").strip() == "yes"):
         dbconfig.metadata.drop_all(engine)
         dbconfig.metadata.create_all(engine)
 
-    if (raw_input("populate tables? ") == "yes"):
+    if (raw_input("populate tables? ").strip() == "yes"):
         populate_database()
 
     for student in get_students():
