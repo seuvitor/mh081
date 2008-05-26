@@ -9,7 +9,7 @@ INFINITY = 1e300000
 NUM_TIMESLOTS = 45
 
 
-class UCTPFacade():
+class UCTPFacade:
     
     
     def make_instance_from_core_classes(self, students, events, rooms, features):
@@ -19,28 +19,44 @@ class UCTPFacade():
         num_features = len(features)
         num_students = len(students)
         
+        student_id_to_index = {}
+        event_id_to_index = {}
+        room_id_to_index = {}
+        feature_id_to_index = {}
+        for i in range(num_students): student_id_to_index[students[i].id] = i
+        for i in range(num_events): event_id_to_index[events[i].id] = i
+        for i in range(num_rooms): room_id_to_index[rooms[i].id] = i
+        for i in range(num_features): feature_id_to_index[features[i].id] = i
+        
         # Get room sizes
         room_sizes = zeros(num_rooms, dtype=int)
         for room in rooms:
-            room_sizes[room.id] = room.capacity
+            index = room_id_to_index[room.id]
+            room_sizes[index] = room.capacity
         
         # Get events attendance
         attendance = zeros((num_events, num_students), dtype=int)
         for student in students:
+            index_student = student_id_to_index[student.id]
             for event in student.events:
-                attendance[event.id, student.id] = 1
+                index_event = event_id_to_index[event.id]
+                attendance[index_event, index_student] = 1
         
         # Get features available in rooms
         room_features = zeros((num_rooms, num_features), dtype=int)
         for room in rooms:
+            index_room = room_id_to_index[room.id]
             for feature in room.features:
-                room_features[room.id, feature.id] = 1
+                index_feature = feature_id_to_index[feature.id]
+                room_features[index_room, index_feature] = 1
         
         # Get features required by events
         event_features = zeros((num_events, num_features), dtype=int)
         for event in events:
+            index_event = event_id_to_index[event.id]
             for feature in event.features:
-                event_features[event.id, feature.id] = 1
+                index_feature = feature_id_to_index[feature.id]
+                event_features[index_event, index_feature] = 1
         
         # Create list of suitable rooms for every event
         suitable_rooms = [list() for i in range(num_events)]
@@ -66,10 +82,12 @@ class UCTPFacade():
                 room_sizes, attendance, room_features, event_features,\
                 suitable_rooms, common_attendance)
         
-        return instance
+        return instance, (student_id_to_index, event_id_to_index, room_id_to_index, feature_id_to_index)
     
     
-    def solution_to_timetable(self, solution):
+    def solution_to_timetable(self, solution, (student_id_to_index, event_id_to_index, room_id_to_index, feature_id_to_index)):
+        
+        event_index_to_id = dict([(v, k) for k, v in event_id_to_index.iteritems()])
         
         num_rooms = solution.instance.num_rooms
         timetable = [[[] for room in range(num_rooms)] for timeslot in range(NUM_TIMESLOTS)]
@@ -80,19 +98,19 @@ class UCTPFacade():
             for room in range(num_rooms):
                 events = room_allocation[room]
                 for event in events:
-                    timetable[timeslot][room].append(event)
+                    timetable[timeslot][room].append(event_index_to_id[event])
         
         return timetable
     
     
-    def results_to_timetable(self, results):
+    def results_to_timetable(self, results, id_maps):
         (best_solution, max_value, value_history, max_value_history, T_history,\
                 P_history, num_iterations) = results
         
-        return self.solution_to_timetable(best_solution)
+        return self.solution_to_timetable(best_solution, id_maps)
 
 
-class UCTP():
+class UCTP:
     
     
     def get_problem_optimization_sense(self):
@@ -196,7 +214,7 @@ class UCTP():
         return 1.0
 
 
-class UCTPInstance():
+class UCTPInstance:
     
     
     def __init__(self, problem, name,\
@@ -404,7 +422,7 @@ class UCTPInstance():
         return penalty
 
 
-class UCTPSolution():
+class UCTPSolution:
     
     
     def __init__(self, instance, events_assignments, timeslots_occupation,\
