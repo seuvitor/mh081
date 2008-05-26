@@ -44,10 +44,10 @@ def populate_database():
         num_features = 1
         
         # Create objects
-        students = [Student(id) for id in range(num_students)]
-        events = [Event(id) for id in range(num_events)]
-        rooms = [Room(id, 3) for id in range(num_rooms)]
-        features = [Feature(id) for id in range(num_features)]
+        students = [Student(str(id), 'John Nobody #' + str(id)) for id in range(num_students)]
+        events = [Event(str(id), 'Event #' + str(id)) for id in range(num_events)]
+        rooms = [Room(str(id), 3) for id in range(num_rooms)]
+        features = [Feature(str(id), 'Feature #' + str(id)) for id in range(num_features)]
         
         # Save objects to the persistence
         for i in range(num_students): session.save(students[i])

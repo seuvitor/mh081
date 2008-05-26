@@ -1,19 +1,21 @@
 class Student(object):
     
-    def __init__(self, id):
+    def __init__(self, id, name):
         self.id = id
+        self.name = name
     
     def __repr__(self):
-        return "<Student('%i')>" % (self.id)
+        return "<Student('%s', '%s')>" % (self.id, self.name)
 
 
 class Event(object):
     
-    def __init__(self, id):
+    def __init__(self, id, description):
         self.id = id
+        self.description = description
     
     def __repr__(self):
-        return "<Event('%i')>" % (self.id)
+        return "<Event('%s', '%s')>" % (self.id, self.description)
 
 
 class Room(object):
@@ -23,13 +25,14 @@ class Room(object):
         self.capacity = capacity
     
     def __repr__(self):
-        return "<Room('%i', '%i')>" % (self.id, self.capacity)
+        return "<Room('%s', '%i')>" % (self.id, self.capacity)
 
 
 class Feature(object):
     
-    def __init__(self, id):
+    def __init__(self, id, description):
         self.id = id
+        self.description = description
     
     def __repr__(self):
-        return "<Feature('%i')>" % (self.id)
+        return "<Feature('%s', '%s')>" % (self.id, self.description)
