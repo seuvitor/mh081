@@ -99,20 +99,25 @@ def report_compiled_results(problem, compiled_results_list):
         for j in range(begin, (end + 1)):
             (instance_name, opt_value, tmp_v, tmp_g, tmp_t) = first_compiled_results[j]
             instance_name = instance_name.replace('_','\_')
-            table_entries += '%s & %.0f ' % (instance_name, opt_value)
+            if opt_value != None:
+                table_entries += '%s & %.0f ' % (instance_name, opt_value)
+            else:
+                table_entries += '%s & ? ' % (instance_name)
             
             # Fill columns with results from different algorithms
             for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
                 
                 (tmp_i, tmp_o, best_value, percentual_gap, total_time) = compiled_results[j]
-                gap = opt_value - best_value
                 
-                if (gap * problem.get_problem_optimization_sense()) > 0:
+                if percentual_gap == 0.0:
+                    table_entries += '& \\textbf{%.0f} & %.2f & %.2f ' %\
+                        (best_value, percentual_gap, total_time)
+                elif percentual_gap != None:
                     table_entries += '& %.0f & %.2f & %.2f ' %\
                         (best_value, percentual_gap, total_time)
                 else:
-                    table_entries += '& \\textbf{%.0f} & %.2f & %.2f ' %\
-                        (best_value, percentual_gap, total_time)
+                    table_entries += '& %.0f & ? & %.2f ' %\
+                        (best_value, total_time)
                         
             table_entries += '\\\\\n'
             

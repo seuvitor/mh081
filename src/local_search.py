@@ -307,9 +307,10 @@ def main(algorithm, problem):
                     print best_max_value
                     
                     # Stopping condition
-                    absolute_gap = best_max_value - opt_value
-                    if (absolute_gap * optimization_sense) >= 0:
-                        break
+                    if (opt_value != None):
+                        absolute_gap = best_max_value - opt_value
+                        if (absolute_gap * optimization_sense) >= 0:
+                            break
             
             total_time = current_time - start_time
             
@@ -323,6 +324,7 @@ def main(algorithm, problem):
             print 'Number of iterations:', num_iterations
             print 'Best solution value:', max_value
             
+            percentual_gap = None
             if opt_value != None:
                 absolute_gap = opt_value - max_value
                 percentual_gap = (absolute_gap * optimization_sense / opt_value) * 100.0
