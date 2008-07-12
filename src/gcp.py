@@ -1,7 +1,6 @@
 from numpy import *
 import random
 from os.path import basename, splitext
-import copy
 
 
 class GCP():
