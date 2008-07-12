@@ -181,6 +181,14 @@ class BQPSolution():
         self.vars = vars
     
     
+    def __copy__(self):
+        return BQPSolution(self.instance, self.vars.copy())
+    
+    
+    def __deepcopy__(self):
+        return self.__copy__()
+    
+    
     def __str__(self):
         vars_str = ''
         for var in self.vars:

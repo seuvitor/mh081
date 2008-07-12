@@ -152,6 +152,14 @@ class GCPSolution():
         self.coloring = coloring
     
     
+    def __copy__(self):
+        return GCPSolution(self.instance, self.coloring.copy())
+    
+    
+    def __deepcopy__(self):
+        return self.__copy__()
+    
+    
     def __str__(self):
         coloring_str = 'K=' + str(len(set(self.coloring))) + ', '\
                             + str(self.calculate_value()) + '\n'

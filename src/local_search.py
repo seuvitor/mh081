@@ -88,7 +88,8 @@ def tabu_search(instance, start_time, current_time):
     current_solution = instance.generate_random_solution()
     current_value = current_solution.calculate_value()
     
-    best_solution = current_solution
+    import copy
+    best_solution = copy.copy(current_solution)
     best_value = current_value
     
     optimization_sense = instance.problem.get_problem_optimization_sense()
@@ -157,7 +158,7 @@ def tabu_search(instance, start_time, current_time):
         global_improvement = current_value - best_value
         if (global_improvement * optimization_sense) > 0:
             last_improvement_iteration = it
-            best_solution = current_solution
+            best_solution = copy.copy(current_solution)
             best_value = current_value
         
         # Increment iteration
@@ -178,7 +179,8 @@ def simulated_annealing(instance, start_time, current_time):
     current_solution = instance.generate_random_solution()
     current_value = current_solution.calculate_value()
     
-    best_solution = current_solution
+    import copy
+    best_solution = copy.copy(current_solution)
     max_value = current_value
 
     optimization_sense = instance.problem.get_problem_optimization_sense()
@@ -231,7 +233,7 @@ def simulated_annealing(instance, start_time, current_time):
         global_improvement = current_value - max_value
         if (global_improvement * optimization_sense) > 0:
             last_improvement_iteration = it
-            best_solution = current_solution
+            best_solution = copy.copy(current_solution)
             max_value = current_value
             
         # Increment iteration

@@ -281,6 +281,15 @@ class TSPSolution():
         self.tour = tour
     
     
+    def __copy__(self):
+        import copy
+        return TSPSolution(self.instance, copy.copy(self.tour))
+    
+    
+    def __deepcopy__(self):
+        return self.__copy__()
+    
+    
     def __str__(self):
         tour_str = ''
         for i in range(len(self.tour)):
