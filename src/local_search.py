@@ -362,6 +362,9 @@ if __name__ == "__main__":
     elif 'uctp' in argv:
         from uctp import *
         problem = UCTP()
+    elif 'gcp' in argv:
+        from gcp import *
+        problem = GCP()
     else:
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
