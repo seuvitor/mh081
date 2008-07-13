@@ -81,22 +81,20 @@ class GCPInstance():
     def get_problem_size(self):
         return self.num_vertices
     
-    def color_on_adjacency(self, coloring, vertex, color):
-        for v in self.gamma[vertex]:
-            if coloring[v] == color:
-                return True
-        return False
-    
-    def min_feasible_color(self, coloring, vertex, forbiden = -1):
-        color = 0
-        if (color == forbiden): color = color + 1
-        while (self.color_on_adjacency(coloring, vertex, color)): 
-            color = color + 1
-            if (color == forbiden): color = color + 1
+    def min_feasible_color(self, coloring, count_adj_colors, vertex,
+                           forbiden = -1):
+        color = 0 if (forbiden != 0) else 1
+        
+        while count_adj_colors[vertex, color] > 0:
+            color += 1
+            if (color == forbiden): color += 1
+                
         return color
     
     def generate_random_solution(self):
         coloring = ones((self.num_vertices), dtype=int) * -1
+        count_adj_colors = zeros((self.num_vertices, self.num_vertices),
+                                 dtype=int)
         
         # Get random permutation of vertices
         uncolored = range(self.num_vertices)
@@ -104,15 +102,19 @@ class GCPInstance():
         
         # Color each vertex with the minimum feasible color
         for u in uncolored:
-            color = self.min_feasible_color(coloring, u)
+            color = self.min_feasible_color(coloring, count_adj_colors, u)
             coloring[u] = color
+            for v in self.gamma[u]:
+                count_adj_colors[v, color] += 1
         
-        solution = GCPSolution(self, coloring)
+        solution = GCPSolution(self, coloring, count_adj_colors)
         return solution
     
     
     def generate_greedy_randomized_solution(self, k):
         coloring = ones((self.num_vertices), dtype=int) * -1
+        count_adj_colors = zeros((self.num_vertices, self.num_vertices),
+                                 dtype=int)
         
         # Get random permutation of vertices
         uncolored = range(self.num_vertices)
@@ -125,16 +127,21 @@ class GCPInstance():
         for i in range(size_uncolored):
             u = uncolored[i]
             
-            color = self.min_feasible_color(coloring, u)
+            color = self.min_feasible_color(coloring, count_adj_colors, u)
             coloring[u] = color
             
             # With a positive probability, use another color
             P = P_0 * (size_uncolored - i) / size_uncolored
             if random.random() > (1.0 - P):
-                color = self.min_feasible_color(coloring, u, coloring[u])
+                color = self.min_feasible_color(coloring, count_adj_colors,
+                                                u, coloring[u])
                 coloring[u] = color
+            
+            # Update count of adjacent colors
+            for v in self.gamma[u]:
+                count_adj_colors[v, color] += 1
         
-        solution = GCPSolution(self, coloring)
+        solution = GCPSolution(self, coloring, count_adj_colors)
         return solution
     
     
@@ -147,13 +154,15 @@ class GCPInstance():
 class GCPSolution():
     
     
-    def __init__(self, instance, coloring):
+    def __init__(self, instance, coloring, count_adj_colors):
         self.instance = instance
         self.coloring = coloring
+        self.count_adj_colors = count_adj_colors
     
     
     def __copy__(self):
-        return GCPSolution(self.instance, self.coloring.copy())
+        return GCPSolution(self.instance, self.coloring.copy(),
+                           self.count_adj_colors.copy())
     
     
     def __deepcopy__(self):
@@ -161,8 +170,7 @@ class GCPSolution():
     
     
     def __str__(self):
-        coloring_str = 'K=' + str(len(set(self.coloring))) + ', '\
-                            + str(self.calculate_value()) + '\n'
+        coloring_str = ''
         for color in self.coloring:
             coloring_str += str(color) + ','
         return coloring_str
@@ -176,12 +184,10 @@ class GCPSolution():
         """ Minimizing the objective function favors large color classes:
             f(s) = - \sum_{i=1}^{K} {|C_i|^2}
         """
-        unique_colors = set(self.coloring)
-        
         value = 0
         classes_sizes = bincount(self.coloring)
-        for color in unique_colors:
-            value = value - (classes_sizes[color] ** 2)
+        for class_size in classes_sizes:
+            value = value - (class_size ** 2)
         return value
     
     
@@ -189,8 +195,8 @@ class GCPSolution():
         delta = 0 
         
         old_color = self.coloring[vertex]
-        new_color = self.instance.min_feasible_color(self.coloring, vertex,
-                                                     old_color);
+        new_color = self.instance.min_feasible_color(self.coloring, \
+                self.count_adj_colors, vertex, old_color);
 
         classes_sizes = bincount(self.coloring)
         old_color_count = classes_sizes[old_color]
@@ -219,19 +225,16 @@ class GCPSolution():
     
     
     def apply_move(self, vertex):
-        
-        estimated_delta = self.calculate_move_delta(vertex)
-        
-        old_value = self.calculate_value()
-        
         old_color = self.coloring[vertex]
-        new_color = self.instance.min_feasible_color(self.coloring, vertex,
-                                                     old_color);
+        new_color = self.instance.min_feasible_color(self.coloring, \
+                self.count_adj_colors, vertex, old_color);
+        
         self.coloring[vertex] = new_color
         
-        new_value = self.calculate_value()
-        if (new_value - old_value) != estimated_delta:
-            print 'estimated_delta', estimated_delta, 'delta', (new_value - old_value)
+        # Update count of adjacent colors
+        for v in self.instance.gamma[vertex]:
+            self.count_adj_colors[v, old_color] -= 1
+            self.count_adj_colors[v, new_color] += 1
     
     
     def is_tabu(self, tabu_list, vertex):
