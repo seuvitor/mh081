@@ -33,13 +33,15 @@ class GCP():
         gamma = [[] for i in range(num_vertices)]
         
         # Parse edges, filling adjacency lists accordingly
-        for i in range(num_edges / 2):
+        line = file.readline()
+        while line != None and line.strip() != '':
+            if (line.split()[0] == 'e'):
+                [e, u, v] = line.split()
+                u, v = (eval(u) - 1), (eval(v) - 1)
+                gamma[u].append(v)
+                gamma[v].append(u)
+            
             line = file.readline()
-            while (line.split()[0] != 'e'): line = file.readline()
-            [e, u, v] = line.split()
-            u, v = (eval(u) - 1), (eval(v) - 1)
-            gamma[u].append(v)
-            gamma[v].append(u)
         
         instance_data = (num_vertices, gamma)
         return instance_data
@@ -60,7 +62,24 @@ class GCP():
     
     
     def get_opt_value(self, instance_name):
-        map = {'DSJC125.1': -3000}
+        map = {'flat1000_50_0': 50,\
+               'flat1000_60_0': 60,\
+               'flat1000_76_0': 76,\
+               'flat300_20_0': 20,\
+               'flat300_26_0': 26,\
+               'flat300_28_0': 28,\
+               'le450_15a': 15,\
+               'le450_15b': 15,\
+               'le450_15c': 15,\
+               'le450_15d': 15,\
+               'le450_25a': 25,\
+               'le450_25b': 25,\
+               'le450_25c': 25,\
+               'le450_25d': 25,\
+               'le450_5a': 5,\
+               'le450_5b': 5,\
+               'le450_5c': 5,\
+               'le450_5d': 5}
         
         if not instance_name in map:
             return None
