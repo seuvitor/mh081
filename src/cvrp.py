@@ -121,7 +121,6 @@ class CVRPInstance():
         """
         improvement = 0
         
-        route.insert(0, 0)
         size = len(route)
 
         improving = True
@@ -149,7 +148,6 @@ class CVRPInstance():
                         break
                 if improving: break
 
-        route.remove(0)
         return improvement
     
     
@@ -176,6 +174,9 @@ class CVRPInstance():
             # Remove from the list the customers actually added
             for id in routes[vehicle]:
                 customers.remove(id)
+            
+            # Add the depot to the start of the route
+            routes[vehicle].insert(0, 0)
             
             # Optimize the route
             self.improve_route(routes[vehicle])
@@ -249,9 +250,8 @@ class CVRPSolution():
             for i in range(len(route) - 1):
                 value += self.instance.D[route[i], route[i + 1]]
             
-            # Add the weight of the edge from and to the depot
-            value += self.instance.D[0, route[0]]
-            value += self.instance.D[route[-1], 0]
+            # Add the weight of the returning edge
+            value += self.instance.D[route[-1], route[0]]
         
         return value
     
@@ -271,8 +271,8 @@ class CVRPSolution():
         # Removing this from the old route would cost
         # - c((v_(i-1), v_i)) - c((v_i, v_(i + 1))) + c((v_(i-1), v_(i + 1)))
         idx = tmp_route.index(customer)
-        previous = tmp_route[idx - 1] if idx != 0 else 0
-        next = tmp_route[idx + 1] if idx != (len(tmp_route) - 1) else 0
+        previous = tmp_route[idx - 1]
+        next = tmp_route[(idx + 1) % len(tmp_route)]
         cost += self.instance.D[previous, next] \
                 - self.instance.D[previous, customer] \
                 - self.instance.D[customer, next]
@@ -301,8 +301,8 @@ class CVRPSolution():
         # Inserting this customer at the end of the route would cost
         # - c((v_n, v_0)) + c((v_n, customer)) + c((customer, v_0))
         cost += self.instance.D[tmp_route[-1], customer] \
-                + self.instance.D[customer, 0] \
-                - self.instance.D[tmp_route[-1], 0]
+                + self.instance.D[customer, tmp_route[0]] \
+                - self.instance.D[tmp_route[-1], tmp_route[0]]
         
         # But the move cost can be improved with route optimization
         tmp_route.append(customer)
