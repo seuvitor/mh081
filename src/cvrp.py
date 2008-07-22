@@ -27,6 +27,13 @@ class CVRP():
         # Get num of vertices
         line = file.readline()
 
+        # Parse number of trucks
+        while not line.startswith('COMMENT'): line = file.readline()
+        K_prefix_str = 'No of trucks:'
+        K_begin = line.index(K_prefix_str) + len(K_prefix_str)
+        K_end = line.index(',', K_begin)
+        K = eval(line[K_begin:K_end])
+        
         # Parse number of vertices
         while not line.startswith('DIMENSION'): line = file.readline()
         num_vertices = eval(line.split().pop())
@@ -66,7 +73,6 @@ class CVRP():
                 D[u,v] = D_uv
                 D[v,u] = D_uv
         
-        K = 8
         instance_data = (num_vertices, coordinates, D, capacity, demands, K)
         return instance_data
     
