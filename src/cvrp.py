@@ -140,9 +140,14 @@ class CVRPInstance():
                     
                     if delta < 0:
                         # Perform 2-opt move.
+                        """
+                        for k in range((j-i) / 2):
+                            route[i + 1 + k], route[j - k] = route[j - k], route[i + 1 + k]
+                        """
                         subroute = route[(i + 1):(j + 1)]
                         subroute.reverse()
                         route[(i + 1):(j + 1)] = subroute
+                        #"""
                         improving = True
                         improvement += delta
                         break
