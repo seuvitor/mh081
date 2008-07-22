@@ -2,7 +2,6 @@ from numpy import *
 import random
 from os.path import basename, splitext
 import copy
-from bisect import bisect_left
 
 EXCESS_PENALTY = 100
 
@@ -88,8 +87,8 @@ class CVRP():
     
     
     def get_opt_value(self, instance_name):
-        map = {'cvrp-1-1288' : 1300,
-               'cvrp-2-1272' : 1290}
+        map = {'cvrp-1-1288' : 1288,
+               'cvrp-2-1272' : 1272}
         
         if not instance_name in map:
             return None
