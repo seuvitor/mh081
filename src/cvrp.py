@@ -322,7 +322,45 @@ class CVRPInstance():
     
     
     def generate_greedy_randomized_solution(self, k):
-        return self.generate_random_solution()
+        remaining_customers = list(range(1, self.num_vertices))
+        routes = [[0] for vehicle in range(self.K)]
+        remaining_capacity = ones(self.K, dtype=int) * self.capacity
+        customer_allocation = ones(self.num_vertices, dtype=int) * -1
+        
+        while len(remaining_customers) > 0:
+            P_skip_best = 0.07 * k * len(remaining_customers) / self.num_vertices
+            
+            best_allocation = None
+            best_cost = None
+            
+            for customer in remaining_customers:
+                for vehicle in range(self.K):
+                    ins_cost = self.insertion_cost(customer, routes[vehicle],
+                                                   remaining_capacity[vehicle])
+                    
+                    if best_allocation == None or ins_cost < best_cost:
+                        if random.random() > P_skip_best:
+                            best_allocation = (customer, vehicle)
+                            best_cost = ins_cost
+            
+            if best_allocation == None: continue
+            
+            # Perform one of the k allocations with the least increment in cost
+            (customer, vehicle) = best_allocation
+            routes[vehicle].append(customer)
+            self.improve_route(routes[vehicle])
+            customer_allocation[customer] = vehicle
+            remaining_capacity[vehicle] -= self.demands[customer]
+            
+            remaining_customers.remove(customer)
+        
+        # Improve the routes
+        for vehicle in range(self.K):
+            self.improve_route(routes[vehicle])
+
+        solution = CVRPSolution(self, customer_allocation, routes,
+                                remaining_capacity)
+        return solution
     
     
     def generate_all_moves(self):
