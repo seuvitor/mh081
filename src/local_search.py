@@ -409,6 +409,9 @@ if __name__ == "__main__":
     elif 'cvrp' in argv:
         from cvrp import *
         problem = CVRP()
+    elif 'dsp' in argv:
+        from dsp import *
+        problem = DSP()
     else:
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
