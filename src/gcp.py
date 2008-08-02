@@ -1,5 +1,6 @@
 from numpy import *
 import random
+import copy
 from os.path import basename, splitext
 
 

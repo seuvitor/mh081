@@ -217,7 +217,6 @@ class CVRPSolution():
     
     
     def __copy__(self):
-        import copy
         return CVRPSolution(self.instance,
                             self.customer_allocation.copy(),
                             copy.deepcopy(self.routes),
