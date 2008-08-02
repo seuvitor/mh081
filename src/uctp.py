@@ -333,6 +333,18 @@ class UCTPSolution:
         self.causing_hcv = causing_hcv
     
     
+    def __copy__(self):
+        return UCTPSolution(self.instance,
+                            self.events_assignments.copy(),
+                            copy.deepcopy(self.timeslots_occupation),
+                            self.timeslots_penalties.copy(),
+                            self.causing_hcv.copy())
+    
+    
+    def __deepcopy__(self):
+        return self.__copy__()
+    
+    
     def __str__(self):
         return str(self.timeslots_occupation)
     
