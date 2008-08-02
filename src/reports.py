@@ -8,14 +8,15 @@ REPORTS_DIR = '../reports/'
 def report_results(instance_name, results, opt_value):
     (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
     
+    figure(1, figsize=(10,4))
     if T_history != None and P_history != None:
         subplot(211)
     
     title(instance_name)
-    plot(range(num_iterations), value_history)
-    plot(range(num_iterations), max_value_history)
+    plot(range(num_iterations), value_history, linewidth=0.5)
+    plot(range(num_iterations), max_value_history, linewidth=0.5)
     if opt_value != None:
-        plot(range(num_iterations), [opt_value for i in range(num_iterations)])
+        plot(range(num_iterations), [opt_value for i in range(num_iterations)], linewidth=0.5)
     xlabel('iterations')
     ylabel('solution value')
     
@@ -30,7 +31,7 @@ def report_results(instance_name, results, opt_value):
         ylabel('T / T_max')
 
     figure_path = REPORTS_DIR + instance_name + '.png'
-    savefig(figure_path)
+    savefig(figure_path, dpi=300, orientation='landscape')
     close()
 
 
