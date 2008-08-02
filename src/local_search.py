@@ -107,6 +107,7 @@ def tabu_search(instance, start_time, current_time):
     import copy
     best_solution = copy.copy(current_solution)
     best_value = current_value
+    distance_from_best_value = 0
     
     optimization_sense = instance.problem.get_problem_optimization_sense()
     
@@ -144,8 +145,10 @@ def tabu_search(instance, start_time, current_time):
             # If the neighbour solution is better than the current, move to it
             if (delta * optimization_sense) > 0:
                 
-                # Ignore if this move is tabu
-                if current_solution.is_tabu(tabu_list, move):
+                # Ignore if this move is tabu and the neighbor solution
+                # doesn't represent a global improvement
+                if current_solution.is_tabu(tabu_list, move) and \
+                        abs(delta) <= distance_from_best_value:
                     continue
                     
                 best_move = move
@@ -178,6 +181,9 @@ def tabu_search(instance, start_time, current_time):
             last_improvement_iteration = it
             best_solution = copy.copy(current_solution)
             best_value = current_value
+            distance_from_best_value = 0
+        else:
+            distance_from_best_value = abs(global_improvement)
         
         # Increment iteration
         it += 1
