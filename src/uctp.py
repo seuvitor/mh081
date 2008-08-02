@@ -110,7 +110,7 @@ class UCTP:
     
     
     def get_opt_value(self, instance_name):
-        return 1.0
+        return None
 
 
 class UCTPInstance:
