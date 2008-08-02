@@ -205,7 +205,7 @@ class BQPSolution():
     
     
     def draw_solution(self):
-        return
+        pass
     
     
     def calculate_report_value(self):
