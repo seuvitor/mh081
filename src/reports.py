@@ -71,6 +71,8 @@ def report_compiled_results(problem, compiled_results_list):
     num_tables = num_instances / table_limit
     if num_instances % table_limit != 0: num_tables += 1
 
+    text += '\\section{Tables}\n'
+    
     # For each table
     for i in range(num_tables):
         #compiled_results_group = compiled_results[i*table_limit:(i+1)*table_limit]
@@ -134,6 +136,7 @@ def report_compiled_results(problem, compiled_results_list):
         text += table
 
     # Insert screen output for each algorithm at the end of the document
+    text += '\\section{Execution logs}\n'
     for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
         text += '\\subsection{Detailed output of algorithm ' + algorithm_name + '}\n'
         text += '\\scriptsize\n'
