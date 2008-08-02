@@ -162,6 +162,61 @@ class CVRPInstance():
         return improvement
     
     
+    def removal_cost(self, customer, route, remaining_capacity):
+        """ Calculate cost of removing customer from a vehicle route """
+        cost = 0
+        
+        # Calculate penalty difference of changing the used capacity
+        if remaining_capacity < 0:
+            excess_delta = max(-self.demands[customer],
+                               remaining_capacity)
+            cost += excess_delta * EXCESS_PENALTY
+        
+        tmp_route = list(route)
+        
+        # Removing this from the old route would cost
+        # - c((v_(i-1), v_i)) - c((v_i, v_(i + 1))) + c((v_(i-1), v_(i + 1)))
+        idx = tmp_route.index(customer)
+        previous = tmp_route[idx - 1]
+        next = tmp_route[(idx + 1) % len(tmp_route)]
+        cost += self.D[previous, next] \
+                - self.D[previous, customer] \
+                - self.D[customer, next]
+        
+        # But the move cost can be improved with route optimization
+        tmp_route.pop(idx)
+        cost += self.improve_route(tmp_route)
+        
+        return cost
+    
+    
+    def insertion_cost(self, customer, route, remaining_capacity):
+        """ Calculate cost of inserting customer into a vehicle route """
+        cost = 0
+        
+        # Calculate penalty difference of changing the used capacity
+        remaining_capacity = (remaining_capacity
+                              - self.demands[customer])
+        if remaining_capacity < 0:
+            excess_delta = min(self.demands[customer],
+                               -remaining_capacity)
+            cost += excess_delta * EXCESS_PENALTY
+        
+        tmp_route = list(route)
+
+        # Inserting this customer at the end of the route would cost
+        # - c((v_n, v_0)) + c((v_n, customer)) + c((customer, v_0))
+        cost += self.D[tmp_route[-1], customer] \
+                + self.D[customer, tmp_route[0]] \
+                - self.D[tmp_route[-1], tmp_route[0]]
+        
+        # But the move cost can be improved with route optimization
+        tmp_route.append(customer)
+        cost += self.improve_route(tmp_route)
+
+        return cost
+    
+    
     def generate_random_solution(self):
         customers = list(range(1, self.num_vertices))
         random.shuffle(customers)
@@ -266,61 +321,6 @@ class CVRPSolution():
         return value
     
     
-    def removal_cost(self, vehicle, customer):
-        """ Calculate cost of removing customer from a vehicle route """
-        cost = 0
-        
-        # Calculate penalty difference of changing the used capacity
-        if self.remaining_capacity[vehicle] < 0:
-            excess_delta = max(-self.instance.demands[customer],
-                               self.remaining_capacity[vehicle])
-            cost += excess_delta * EXCESS_PENALTY
-        
-        tmp_route = list(self.routes[vehicle])
-        
-        # Removing this from the old route would cost
-        # - c((v_(i-1), v_i)) - c((v_i, v_(i + 1))) + c((v_(i-1), v_(i + 1)))
-        idx = tmp_route.index(customer)
-        previous = tmp_route[idx - 1]
-        next = tmp_route[(idx + 1) % len(tmp_route)]
-        cost += self.instance.D[previous, next] \
-                - self.instance.D[previous, customer] \
-                - self.instance.D[customer, next]
-        
-        # But the move cost can be improved with route optimization
-        tmp_route.pop(idx)
-        cost += self.instance.improve_route(tmp_route)
-        
-        return cost
-    
-    
-    def insertion_cost(self, vehicle, customer):
-        """ Calculate cost of inserting customer into a vehicle route """
-        cost = 0
-        
-        # Calculate penalty difference of changing the used capacity
-        new_remaining_capacity = self.remaining_capacity[vehicle] - \
-                self.instance.demands[customer]
-        if new_remaining_capacity < 0:
-            excess_delta = min(self.instance.demands[customer],
-                               -new_remaining_capacity)
-            cost += excess_delta * EXCESS_PENALTY
-        
-        tmp_route = list(self.routes[vehicle])
-
-        # Inserting this customer at the end of the route would cost
-        # - c((v_n, v_0)) + c((v_n, customer)) + c((customer, v_0))
-        cost += self.instance.D[tmp_route[-1], customer] \
-                + self.instance.D[customer, tmp_route[0]] \
-                - self.instance.D[tmp_route[-1], tmp_route[0]]
-        
-        # But the move cost can be improved with route optimization
-        tmp_route.append(customer)
-        cost += self.instance.improve_route(tmp_route)
-
-        return cost
-    
-    
     def best_vehicle_change(self, customer):
         """ Choose vehicle different from the current that has the lowest
             cost for insertion of this customer.
@@ -334,7 +334,8 @@ class CVRPSolution():
             # Staying in the current vehicle means no change
             if vehicle == old_vehicle: continue
             
-            insertion_cost = self.insertion_cost(vehicle, customer)
+            insertion_cost = self.instance.insertion_cost(customer, \
+                    self.routes[vehicle], self.remaining_capacity[vehicle])
             
             if best_insertion_cost == None \
                     or insertion_cost < best_insertion_cost:
@@ -347,7 +348,8 @@ class CVRPSolution():
     def calculate_move_delta(self, (customer)):
         # Calculate cost of removing customer from current vehicle
         old_vehicle = self.customer_allocation[customer]
-        removal_cost = self.removal_cost(old_vehicle, customer)
+        removal_cost = self.instance.removal_cost(customer, \
+                self.routes[old_vehicle], self.remaining_capacity[old_vehicle])
         
         # Identify best different vehicle for inserting the customer
         (new_vehicle, insertion_cost) = self.best_vehicle_change(customer)
