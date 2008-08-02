@@ -285,8 +285,6 @@ def simulated_annealing(instance, start_time, current_time):
 
 def main(algorithm, algorithm_name, problem):
     
-    random.seed(236887699)
-    
     compiled_results = []
     
     instances_dir = problem.get_instances_dir()
@@ -314,6 +312,8 @@ def main(algorithm, algorithm_name, problem):
         
         instance_count = 1
         for instance in problem_set:
+            random.seed(236887699)
+            
             start_time = time()
             current_time = start_time
             
