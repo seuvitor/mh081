@@ -8,7 +8,9 @@ REPORTS_DIR = '../reports/'
 def report_results(instance_name, results, opt_value):
     (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
     
-    subplot(211)
+    if T_history != None and P_history != None:
+        subplot(211)
+    
     title(instance_name)
     plot(range(num_iterations), value_history)
     plot(range(num_iterations), max_value_history)
@@ -16,7 +18,7 @@ def report_results(instance_name, results, opt_value):
         plot(range(num_iterations), [opt_value for i in range(num_iterations)])
     xlabel('iterations')
     ylabel('solution value')
-
+    
     if T_history != None and P_history != None:
         subplot(212)
         P_history_X = [iteration for (iteration, P) in P_history]
