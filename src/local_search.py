@@ -8,7 +8,6 @@ psyco.full()
 from os import listdir
 from os.path import basename, splitext
 from time import time
-from numpy import *
 import random
 
 
@@ -301,7 +300,7 @@ def main(algorithm, algorithm_name, problem):
     print '> ALGORITHM SETUP:'
     print 'Time limit (seconds):', TIME_LIMIT
     
-    for file_name in problem_set_files:
+    for file_name in sorted(problem_set_files):
         file_path = instances_dir + file_name
         (problem_set_name, ext) = splitext(basename(file_path))
         
@@ -365,7 +364,7 @@ def main(algorithm, algorithm_name, problem):
             percentual_gap = None
             if opt_value != None:
                 absolute_gap = opt_value - best_value
-                percentual_gap = (absolute_gap * optimization_sense / opt_value) * 100.0
+                percentual_gap = (float(absolute_gap * optimization_sense) / opt_value) * 100.0
                 print 'Optimal value:', opt_value
                 print 'Gap:', percentual_gap, '%'
             
