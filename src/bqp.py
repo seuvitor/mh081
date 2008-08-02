@@ -242,6 +242,10 @@ class BQPSolution():
         self.vars[i] = 1 - self.vars[i]
     
     
+    def polish(self):
+        pass
+    
+    
     def is_tabu(self, tabu_list, i):
         return (i in tabu_list)
     

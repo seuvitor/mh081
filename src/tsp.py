@@ -379,6 +379,10 @@ class TSPSolution():
         self.tour[(i + 1):(j + 1)] = subtour
     
     
+    def polish(self):
+        pass
+    
+    
     def is_tabu(self, tabu_list, (i, j)):
         size = self.instance.num_vertices
         

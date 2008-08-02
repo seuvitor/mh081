@@ -503,8 +503,13 @@ class CVRPSolution():
         self.routes[new_vehicle].append(customer)
         self.instance.improve_route(self.routes[old_vehicle])
         self.instance.improve_route(self.routes[new_vehicle])
-        
-        
+    
+    
+    def polish(self):
+        for route in self.routes:
+            improvement = self.instance.improve_to_opt_route(route)
+    
+    
     def is_tabu(self, tabu_list, customer):
         return (customer in tabu_list)
     

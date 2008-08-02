@@ -500,6 +500,10 @@ class UCTPSolution:
                     self.timeslots_occupation[timeslot_2], self.causing_hcv)
     
     
+    def polish(self):
+        pass
+    
+    
     def is_tabu(self, tabu_list, (move_type, move_data)):
         if move_type == 'INS':
             (moving_event, jump) = move_data

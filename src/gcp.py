@@ -275,6 +275,10 @@ class GCPSolution():
             self.count_adj_colors[v, new_color] += 1
     
     
+    def polish(self):
+        pass
+    
+    
     def is_tabu(self, tabu_list, vertex):
         return (vertex in tabu_list)
     
