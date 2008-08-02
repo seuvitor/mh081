@@ -283,7 +283,7 @@ def simulated_annealing(instance, start_time, current_time):
     return (best_solution, report_value, value_history, best_value_history, T_history, P_history, it)
 
 
-def main(algorithm, problem):
+def main(algorithm, algorithm_name, problem):
     
     random.seed(236887699)
     
@@ -379,7 +379,7 @@ def main(algorithm, problem):
             
             # Draw graphs about the simulation with best results
             import reports
-            reports.report_results(instance.name, best_results, opt_value)
+            reports.report_results(instance.name, algorithm_name, best_results, opt_value)
     
     screen_output = sys.stdout.log
     sys.stdout = sys.stdout.sysout
@@ -424,16 +424,16 @@ if __name__ == "__main__":
     compiled_results_list = []
 
     if 'gr' in argv:
-        #(compiled_results, screen_output) = prof.runcall(main, grasp, problem)
-        (compiled_results, screen_output) = main(grasp, problem)
+        #(compiled_results, screen_output) = prof.runcall(main, grasp, 'GR', problem)
+        (compiled_results, screen_output) = main(grasp, 'GR', problem)
         compiled_results_list.append(('GR', compiled_results, screen_output))
     if 'ts' in argv:
-        #(compiled_results, screen_output) = prof.runcall(main, tabu_search, problem)
-        (compiled_results, screen_output) = main(tabu_search, problem)
+        #(compiled_results, screen_output) = prof.runcall(main, tabu_search, 'TS', problem)
+        (compiled_results, screen_output) = main(tabu_search, 'TS', problem)
         compiled_results_list.append(('TS', compiled_results, screen_output))
     if 'sa' in argv:
-        #(compiled_results, screen_output) = prof.runcall(main, simulated_annealing, problem)
-        (compiled_results, screen_output) = main(simulated_annealing, problem)
+        #(compiled_results, screen_output) = prof.runcall(main, simulated_annealing, 'SA', problem)
+        (compiled_results, screen_output) = main(simulated_annealing, 'SA', problem)
         compiled_results_list.append(('SA', compiled_results, screen_output))
     
     #prof.close()
