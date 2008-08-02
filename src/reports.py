@@ -57,13 +57,13 @@ def report_compiled_results(problem, compiled_results_list):
             '\\usepackage{fullpage}\n'\
             '\\usepackage[brazil]{babel}\n'\
             '\\usepackage[latin1]{inputenc}\n'\
-            '\\title{Relatorio de experimento\\\\\\small{\\textbf{'
+            '\\title{Experiment report\\\\\\small{\\textbf{'
     text += report_title
     text += '}}}\n'\
             '\\date{}\n'\
             '\\begin{document}\n'\
-            '\\maketitle\n'\
-
+            '\\maketitle\n'
+    
     # Calculate how many tables will be needed
     DEFAUL_TABLE_LINE_LIMIT = 20
     table_limit = DEFAUL_TABLE_LINE_LIMIT
@@ -135,7 +135,7 @@ def report_compiled_results(problem, compiled_results_list):
 
     # Insert screen output for each algorithm at the end of the document
     for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
-        text += '\\center{\\large{\\textbf{Output detalhado do algoritmo ' + algorithm_name + ':}}}\n'
+        text += '\\subsection{Detailed output of algorithm ' + algorithm_name + '}\n'
         text += '\\scriptsize\n'
         text += '\\begin{verbatim}\n'
         text += screen_output
