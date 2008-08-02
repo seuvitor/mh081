@@ -162,6 +162,75 @@ class CVRPInstance():
         return improvement
     
     
+    def improve_to_opt_route(self, route):
+        """ Solves the route to optimality using a dynamic programming
+            algorithm. Changes the route in-place and returns the improvement
+            in the length of the route.
+        """ 
+        if len(route) < 2:
+            return 0
+        
+        # Calculate value of the route to be optimized
+        value = 0
+        for i in range(len(route) - 1):
+            value += self.D[route[i], route[i + 1]]
+        value += self.D[route[-1], route[0]]
+        
+        S = set(route)
+        S.discard(0) # Discard the depot
+        S = frozenset(S) # Use frozenset so that it can be hashable
+        
+        best_route, best_value = None, None
+        
+        self.opt_paths.clear()
+        
+        # Select argmin_i{OPT[S, i] + d_i0}
+        for i in S:
+            subpath, subpath_value = self.opt_subpath(S, i)
+            route_value = subpath_value + self.D[i, 0]
+            
+            if best_value == None or route_value < best_value:
+                best_value = route_value
+                best_route = subpath
+        
+        # Update the route
+        route[:] = best_route[:]
+        
+        improvement = best_value - value
+        return improvement
+    
+    
+    opt_paths = {} # Mapping for "memoizing" the optimal subpaths
+    
+    def opt_subpath(self, S, i):
+        """ Calculates the value of the shortest path that starts at the depot,
+            visits all customers in S - {i} and stops at customer i.
+            Returns the path and its length. 
+        """
+        if (S, i) not in self.opt_paths:
+            
+            # Base of recursion is when S == {i}
+            if len(S) == 1:
+                self.opt_paths[(S, i)] = ([0, i], self.D[0, i])
+            
+            else:
+                best_path, best_value = None, None
+                S_minus_i = S - set([i])
+                
+                # Select argmin_j{OPT[S - {i}, j] + d_ji}
+                for j in S_minus_i:
+                    subpath, subpath_value = self.opt_subpath(S_minus_i, j)
+                    path_value = subpath_value + self.D[j, i]
+                    
+                    if best_value == None or path_value < best_value:
+                        best_path = subpath + [i]
+                        best_value = path_value
+            
+                self.opt_paths[(S, i)] = (best_path, best_value)
+        
+        return self.opt_paths[(S, i)]
+    
+    
     def removal_cost(self, customer, route, remaining_capacity):
         """ Calculate cost of removing customer from a vehicle route """
         cost = 0
