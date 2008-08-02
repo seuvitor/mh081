@@ -44,10 +44,10 @@ def grasp(instance, start_time, current_time):
     optimization_sense = instance.problem.get_problem_optimization_sense()
     
     value_history = []
-    max_value_history = []
+    best_value_history = []
     
     best_solution = copy.copy(current_solution)
-    max_value = current_value
+    best_value = current_value
     
     # Generate all possible moves
     moves = instance.generate_all_moves()
@@ -75,14 +75,14 @@ def grasp(instance, start_time, current_time):
             
             current_time = time()
         
-        global_improvement = current_value - max_value
+        global_improvement = current_value - best_value
         if (global_improvement * optimization_sense) > 0:
             best_solution = copy.copy(current_solution)
-            max_value = current_value
+            best_value = current_value
         
         # Store historic data
         value_history.append(current_value)
-        max_value_history.append(max_value)
+        best_value_history.append(best_value)
         
         # Generate another greedy randomized solution
         current_solution = instance.generate_greedy_randomized_solution(2)
@@ -90,7 +90,7 @@ def grasp(instance, start_time, current_time):
         
         current_time = time()
     
-    return (best_solution, max_value, value_history, max_value_history, None, None, it)
+    return (best_solution, best_value, value_history, best_value_history, None, None, it)
 
 
 def tabu_search(instance, start_time, current_time):
@@ -195,12 +195,12 @@ def simulated_annealing(instance, start_time, current_time):
     
     import copy
     best_solution = copy.copy(current_solution)
-    max_value = current_value
+    best_value = current_value
 
     optimization_sense = instance.problem.get_problem_optimization_sense()
     
     value_history = []
-    max_value_history = []
+    best_value_history = []
     T_history = []
     P_history = []
     
@@ -217,7 +217,7 @@ def simulated_annealing(instance, start_time, current_time):
         
         # Store historic data
         value_history.append(current_value)
-        max_value_history.append(max_value)
+        best_value_history.append(best_value)
         
         # Parameter k defines the steepness of the curve
         k = 10.0
@@ -246,18 +246,18 @@ def simulated_annealing(instance, start_time, current_time):
                 current_value = neighbour_value
 
         # Update best solution found until now, if needed
-        global_improvement = current_value - max_value
+        global_improvement = current_value - best_value
         if (global_improvement * optimization_sense) > 0:
             last_improvement_iteration = it
             best_solution = copy.copy(current_solution)
-            max_value = current_value
+            best_value = current_value
             
         # Increment iteration
         it += 1
         
         current_time = time()
-        
-    return (best_solution, max_value, value_history, max_value_history, T_history, P_history, it)
+    
+    return (best_solution, best_value, value_history, best_value_history, T_history, P_history, it)
 
 
 def main(algorithm, problem):
@@ -298,7 +298,7 @@ def main(algorithm, problem):
             opt_value = problem.get_opt_value(instance.name)
             
             best_results = None
-            best_max_value = - (INFINITY * optimization_sense)
+            global_best_value = - (INFINITY * optimization_sense)
             
             print '--------------------------------------------------------------------'
             print '> INSTANCE:', instance.name
@@ -310,20 +310,20 @@ def main(algorithm, problem):
                 num_restarts += 1
                 
                 results = algorithm(instance, start_time, current_time)
-                (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
+                (best_solution, best_value, value_history, best_value_history, T_history, P_history, num_iterations) = results
                 
                 current_time = time()
                 
                 # Store the best results found until now
-                global_improvement = max_value - best_max_value
+                global_improvement = best_value - global_best_value
                 if best_results == None or (global_improvement * optimization_sense) > 0:
                     best_results = results
-                    best_max_value = max_value
-                    print best_max_value
+                    global_best_value = best_value
+                    print global_best_value
                     
                     # Stopping condition
                     if (opt_value != None):
-                        absolute_gap = best_max_value - opt_value
+                        absolute_gap = global_best_value - opt_value
                         if (absolute_gap * optimization_sense) >= 0:
                             break
             
@@ -335,13 +335,13 @@ def main(algorithm, problem):
             
             # Use the best results and the optimal solution for reporting results
             print '> WINNING SIMULATION STATISTICS:'
-            (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = best_results
+            (best_solution, best_value, value_history, best_value_history, T_history, P_history, num_iterations) = best_results
             print 'Number of iterations:', num_iterations
-            print 'Best solution value:', max_value
+            print 'Best solution value:', best_value
             
             percentual_gap = None
             if opt_value != None:
-                absolute_gap = opt_value - max_value
+                absolute_gap = opt_value - best_value
                 percentual_gap = (absolute_gap * optimization_sense / opt_value) * 100.0
                 print 'Optimal value:', opt_value
                 print 'Gap:', percentual_gap, '%'
@@ -352,7 +352,7 @@ def main(algorithm, problem):
             solution_text = textwrap.fill(solution_text, 100)
             print solution_text
             
-            compiled_results.append((instance.name, opt_value, max_value, percentual_gap, total_time))
+            compiled_results.append((instance.name, opt_value, best_value, percentual_gap, total_time))
             
             # Draw graphs about the simulation with best results
             import reports
