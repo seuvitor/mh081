@@ -109,7 +109,9 @@ def tabu_search(instance, start_time, current_time):
     while (current_time - start_time) < TIME_LIMIT:
         
         # Give up if it has been a long time since the last improvement
-        if (it - last_improvement_iteration) > (expected_num_iterations / 10): break
+        if it > expected_num_iterations and \
+                (it - last_improvement_iteration) > (expected_num_iterations / 10):
+            break
         
         # Store historic data
         value_history.append(current_value)
@@ -195,7 +197,9 @@ def simulated_annealing(instance, start_time, current_time):
     while (current_time - start_time) < TIME_LIMIT:
         
         # Give up if it has been a long time since the last improvement
-        if (it - last_improvement_iteration) > (expected_num_iterations / 10): break
+        if it > expected_num_iterations and \
+                (it - last_improvement_iteration) > (expected_num_iterations / 10):
+            break
         
         # Store historic data
         value_history.append(current_value)
