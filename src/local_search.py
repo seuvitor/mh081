@@ -406,6 +406,9 @@ if __name__ == "__main__":
     elif 'gcp' in argv:
         from gcp import *
         problem = GCP()
+    elif 'cvrp' in argv:
+        from cvrp import *
+        problem = CVRP()
     else:
         print "Specify a problem and algorithm, e.g.:"
         print "$ python local_search.py bqp sa"
