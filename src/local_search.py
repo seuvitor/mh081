@@ -38,7 +38,7 @@ def estimate_median_delta(instance):
 
 def grasp(instance, start_time, current_time):
     # Calculate initial solution
-    current_solution = instance.generate_greedy_randomized_solution(3)
+    current_solution = instance.generate_greedy_randomized_solution(2)
     current_value = current_solution.calculate_value()
     
     optimization_sense = instance.problem.get_problem_optimization_sense()
@@ -46,37 +46,51 @@ def grasp(instance, start_time, current_time):
     value_history = []
     max_value_history = []
     
-    it = 0
-    
-    improving = True
+    best_solution = copy.copy(current_solution)
+    max_value = current_value
     
     # Generate all possible moves
     moves = instance.generate_all_moves()
-    
-    # Start local search
-    while improving and (current_time - start_time) < TIME_LIMIT:
+
+    it = 0
+    while (current_time - start_time) < TIME_LIMIT:
         
         # Increment iteration
         it += 1
         
+        improving = True
+        
+        # Start local search
+        while improving and (current_time - start_time) < TIME_LIMIT:
+            improving = False
+            for move in moves:
+                delta = current_solution.calculate_move_delta(move)
+                
+                # If the neighbour solution is better, move to it
+                if (delta * optimization_sense) > 0:
+                    current_solution.apply_move(move)
+                    current_value = current_value + delta
+                    improving = True
+                    break
+            
+            current_time = time()
+        
+        global_improvement = current_value - max_value
+        if (global_improvement * optimization_sense) > 0:
+            best_solution = copy.copy(current_solution)
+            max_value = current_value
+        
         # Store historic data
         value_history.append(current_value)
-        max_value_history.append(current_value)
+        max_value_history.append(max_value)
         
-        improving = False
-        for move in moves:
-            delta = current_solution.calculate_move_delta(move)
-            
-            # If the neighbour solution is better, move to it
-            if (delta * optimization_sense) > 0:
-                current_solution.apply_move(move)
-                current_value = current_value + delta
-                improving = True
-                break
+        # Generate another greedy randomized solution
+        current_solution = instance.generate_greedy_randomized_solution(2)
+        current_value = current_solution.calculate_value()
         
         current_time = time()
-        
-    return (current_solution, current_value, value_history, max_value_history, None, None, it)
+    
+    return (best_solution, max_value, value_history, max_value_history, None, None, it)
 
 
 def tabu_search(instance, start_time, current_time):
