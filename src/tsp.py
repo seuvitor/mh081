@@ -329,6 +329,10 @@ class TSPSolution():
         root.mainloop()
     
     
+    def calculate_report_value(self):
+        return self.calculate_value()
+    
+    
     def calculate_value(self):
         value = 0
         size = self.instance.num_vertices

@@ -208,6 +208,10 @@ class BQPSolution():
         return
     
     
+    def calculate_report_value(self):
+        return self.calculate_value()
+    
+    
     def calculate_value(self):
         return dot(dot(self.vars, self.instance.Q), self.vars)
     

@@ -361,6 +361,10 @@ class UCTPSolution:
         return
     
     
+    def calculate_report_value(self):
+        return self.calculate_value()
+    
+    
     def calculate_value(self):
         # The solution value is the sum of the penalties for each timeslot
         return sum(self.timeslots_penalties)

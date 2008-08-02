@@ -209,6 +209,15 @@ class GCPSolution():
         return
     
     
+    def calculate_report_value(self):
+        num_colors_used = 0
+        classes_sizes = bincount(self.coloring)
+        for class_size in classes_sizes:
+            if class_size > 0:
+                num_colors_used += 1
+        return num_colors_used
+    
+    
     def calculate_value(self):
         """ Minimizing the objective function favors large color classes:
             f(s) = - \sum_{i=1}^{K} {|C_i|^2}

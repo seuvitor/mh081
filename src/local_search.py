@@ -91,7 +91,8 @@ def grasp(instance, start_time, current_time):
         
         current_time = time()
     
-    return (best_solution, best_value, value_history, best_value_history, None, None, it)
+    report_value = best_solution.calculate_report_value()
+    return (best_solution, report_value, value_history, best_value_history, None, None, it)
 
 
 def tabu_search(instance, start_time, current_time):
@@ -181,7 +182,8 @@ def tabu_search(instance, start_time, current_time):
         
         current_time = time()
         
-    return (best_solution, best_value, value_history, best_value_history, None, None, it)
+    report_value = best_solution.calculate_report_value()
+    return (best_solution, report_value, value_history, best_value_history, None, None, it)
 
 
 def simulated_annealing(instance, start_time, current_time):
@@ -265,7 +267,8 @@ def simulated_annealing(instance, start_time, current_time):
         
         current_time = time()
     
-    return (best_solution, best_value, value_history, best_value_history, T_history, P_history, it)
+    report_value = best_solution.calculate_report_value()
+    return (best_solution, report_value, value_history, best_value_history, T_history, P_history, it)
 
 
 def main(algorithm, problem):
