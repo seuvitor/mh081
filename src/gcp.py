@@ -98,8 +98,17 @@ class GCPInstance():
         self.gamma = gamma
     
     
-    def get_problem_size(self):
-        return self.num_vertices
+    def get_tabu_tenure(self):
+        return self.num_vertices / 8
+    
+
+    def get_expected_num_tabu_iterations(self):
+        return self.num_vertices * 100
+    
+
+    def get_expected_num_sa_iterations(self):
+        return self.num_vertices * 5000
+    
     
     def min_feasible_color(self, coloring, count_adj_colors, vertex,
                            forbiden = -1):

@@ -200,8 +200,16 @@ class TSPInstance():
         self.D = D
     
     
-    def get_problem_size(self):
-        return self.num_vertices
+    def get_tabu_tenure(self):
+        return self.num_vertices / 8
+    
+
+    def get_expected_num_tabu_iterations(self):
+        return self.num_vertices * 100
+    
+
+    def get_expected_num_sa_iterations(self):
+        return self.num_vertices * 1000
     
     
     def generate_random_solution(self):

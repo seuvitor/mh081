@@ -134,10 +134,18 @@ class UCTPInstance:
         self.common_attendance = common_attendance
     
     
-    def get_problem_size(self):
-        return self.num_events
+    def get_tabu_tenure(self):
+        return self.num_events / 2
     
+	
+    def get_expected_num_tabu_iterations(self):
+        return self.num_events * 250
     
+	
+    def get_expected_num_sa_iterations(self):
+        return self.num_events * 5000
+    
+	
     def generate_random_solution(self):
         events_assignments = zeros(self.num_events, dtype=int)
         timeslots_occupation = [list() for timeslot in range(NUM_TIMESLOTS)]

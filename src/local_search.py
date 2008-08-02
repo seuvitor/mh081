@@ -1,5 +1,4 @@
 INFINITY = 1e300000
-DEFAULT_NUM_ITERATIONS = 1000
 TIME_LIMIT = 60
 
 import psyco
@@ -81,8 +80,7 @@ def grasp(instance, start_time, current_time):
 
 
 def tabu_search(instance, start_time, current_time):
-    problem_size = instance.get_problem_size()
-    expected_num_iterations = problem_size * DEFAULT_NUM_ITERATIONS / 10
+    expected_num_iterations = instance.get_expected_num_tabu_iterations()
     
     # Calculate initial solution
     current_solution = instance.generate_random_solution()
@@ -105,7 +103,7 @@ def tabu_search(instance, start_time, current_time):
     random.shuffle(moves)
     
     tabu_list = []
-    tabu_tenure = problem_size / 4
+    tabu_tenure = instance.get_tabu_tenure()
     
     # Start local search
     while (current_time - start_time) < TIME_LIMIT:
@@ -173,8 +171,8 @@ def simulated_annealing(instance, start_time, current_time):
     # Calculate median delta
     median_delta = estimate_median_delta(instance)
     
-    expected_num_iterations = instance.get_problem_size() * DEFAULT_NUM_ITERATIONS
-
+    expected_num_iterations = instance.get_expected_num_sa_iterations()
+	
     # Calculate initial solution
     current_solution = instance.generate_random_solution()
     current_value = current_solution.calculate_value()
@@ -262,7 +260,6 @@ def main(algorithm, problem):
     print 'Memory: 896MB RAM'
 
     print '> ALGORITHM SETUP:'
-    print 'Number of iterations (per instance size unit):', str(DEFAULT_NUM_ITERATIONS)
     print 'Time limit (seconds):', TIME_LIMIT
     
     for file_name in problem_set_files:

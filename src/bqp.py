@@ -150,10 +150,18 @@ class BQPInstance():
         self.Q = Q
     
     
-    def get_problem_size(self):
-        return self.num_vars
+    def get_tabu_tenure(self):
+        return self.num_vars / 8
     
+	
+    def get_expected_num_tabu_iterations(self):
+        return self.num_vars * 100
     
+	
+    def get_expected_num_sa_iterations(self):
+        return self.num_vars * 1000
+    
+	
     def generate_random_solution(self):
         vars = zeros((self.num_vars), dtype=int)
         for i in range(self.num_vars):

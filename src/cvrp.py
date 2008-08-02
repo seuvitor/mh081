@@ -121,6 +121,18 @@ class CVRPInstance():
         return self.num_vertices
     
 
+    def get_tabu_tenure(self):
+        return self.num_vertices / 4
+    
+
+    def get_expected_num_tabu_iterations(self):
+        return self.num_vertices * 100
+    
+
+    def get_expected_num_sa_iterations(self):
+        return self.num_vertices * 5000
+    
+
     def improve_route(self, route):
         """ Improve the route using a 2-opt heuristic. Changes the route
             in-place and returns the improvement in the length of the route.
