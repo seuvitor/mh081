@@ -5,7 +5,13 @@ from os.path import splitext
 REPORTS_DIR = '../reports/'
 
 
-def report_results(instance_name, results, opt_value):
+def figure_name(instance_name, algorithm_name):
+    name = (instance_name + '_' + algorithm_name)
+    name = name.replace('.', '_')
+    name = name.replace(' ', '_')
+    return name + '.png'
+
+def report_results(instance_name, algorithm_name, results, opt_value):
     (best_solution, max_value, value_history, max_value_history, T_history, P_history, num_iterations) = results
     
     figure(1, figsize=(10,4))
@@ -30,7 +36,7 @@ def report_results(instance_name, results, opt_value):
         xlabel('iterations')
         ylabel('T / T_max')
 
-    figure_path = REPORTS_DIR + instance_name + '.png'
+    figure_path = REPORTS_DIR + figure_name(instance_name, algorithm_name)
     savefig(figure_path, dpi=300, orientation='landscape')
     close()
 
@@ -57,6 +63,7 @@ def report_compiled_results(problem, compiled_results_list):
             '\\usepackage{fullpage}\n'\
             '\\usepackage[brazil]{babel}\n'\
             '\\usepackage[latin1]{inputenc}\n'\
+            '\\usepackage{graphicx}\n'\
             '\\title{Experiment report\\\\\\small{\\textbf{'
     text += report_title
     text += '}}}\n'\
@@ -134,6 +141,24 @@ def report_compiled_results(problem, compiled_results_list):
                  '\\clearpage\n'
         
         text += table
+    
+    # Insert graphs for each instance and algorithm
+    text += '\\section{Figures}\n'
+    for (algorithm_name, compiled_results, screen_output) in compiled_results_list:
+        text += '\\subsection{Figures for algorithm ' + algorithm_name + '}\n'
+        even = False
+        for (instance_name, opt_value, tmp_v, tmp_g, tmp_t) in first_compiled_results:
+            text += '\\begin{figure}[hb!]\n'\
+                    '\\centering\n'\
+                    '\\includegraphics[scale=0.6]{' + figure_name(instance_name, algorithm_name) + '}\n'\
+                    '\\caption{' + problem.get_problem_name() + ' ' + algorithm_name + ' ' + instance_name + '}\n'\
+                    '\\end{figure}\n'
+        
+            if even: text += '\\clearpage\n'
+            even = not even
+        
+        if even: text += '\\clearpage\n'
+    
 
     # Insert screen output for each algorithm at the end of the document
     text += '\\section{Execution logs}\n'
