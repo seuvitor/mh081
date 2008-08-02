@@ -1,5 +1,6 @@
 INFINITY = 1e300000
 TIME_LIMIT = 60
+DETAILED_SA_HISTORY = True
 
 import psyco
 psyco.full()
@@ -201,8 +202,12 @@ def simulated_annealing(instance, start_time, current_time):
     
     value_history = []
     best_value_history = []
-    T_history = []
-    P_history = []
+    
+    T_history = None
+    P_history = None
+    if DETAILED_SA_HISTORY:
+        T_history = []
+        P_history = []
     
     it = 0
     last_improvement_iteration = 0
@@ -222,7 +227,9 @@ def simulated_annealing(instance, start_time, current_time):
         # Parameter k defines the steepness of the curve
         k = 10.0
         P_accept_median_delta = exp(-(k * float(it) / float(expected_num_iterations)))
-        T_history.append(P_accept_median_delta)
+        
+        if DETAILED_SA_HISTORY:
+            T_history.append(P_accept_median_delta)
         
         # Generate a neighbour solution
         (move, delta) = current_solution.generate_random_move()
@@ -241,9 +248,10 @@ def simulated_annealing(instance, start_time, current_time):
             
             # And move if the suboptimal solution gets lucky
             if random.random() < P_accept_subopt:
-                P_history.append((it, P_accept_subopt))
                 current_solution.apply_move(move)
                 current_value = neighbour_value
+                if DETAILED_SA_HISTORY:
+                    P_history.append((it, P_accept_subopt))
 
         # Update best solution found until now, if needed
         global_improvement = current_value - best_value
