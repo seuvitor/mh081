@@ -97,11 +97,11 @@ class DSPInstance():
     
 
     def get_expected_num_tabu_iterations(self):
-        return self.num_vertices * 20
+        return self.num_vertices * 100
     
 
     def get_expected_num_sa_iterations(self):
-        return self.num_vertices * 2500#15000
+        return self.num_vertices * 2500
     
     
     def generate_random_solution(self):
@@ -179,10 +179,12 @@ class DSPSolution():
     
     
     def __str__(self):
-        vars_str = ''
-        for var in self.vars:
-            vars_str += str(var) + ','
-        return vars_str
+        set_str = ''
+        for i in range(len(self.vars)):
+            if self.vars[i] == 1:
+                # Add 1 to convert to 1-indexed
+                set_str += str(i + 1) + ','
+        return set_str
     
     
     def draw_solution(self):
@@ -252,8 +254,6 @@ class DSPSolution():
     
     
     def apply_move(self, u):
-        estimated_delta = self.calculate_move_delta(u)
-        value_befor = self.calculate_value()
         
         if self.vars[u] == 0:
             # Insert u into the solution set
@@ -269,10 +269,6 @@ class DSPSolution():
             # Decrement cover count of neighbor vertices
             for v in self.instance.gamma[u]:
                 self.cover_count[v] += 1
-        
-        value_after = self.calculate_value()
-        if value_after - value_befor != estimated_delta:
-            print value_after, '-', value_befor, '!=', estimated_delta
     
     
     def polish(self):
