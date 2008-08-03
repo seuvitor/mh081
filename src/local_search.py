@@ -37,6 +37,9 @@ def estimate_median_delta(instance):
 
 
 def grasp(instance, start_time, current_time):
+    
+    print '>> Starting GRASP...'
+    
     # Calculate initial solution
     current_solution = instance.generate_greedy_randomized_solution(2)
     current_value = current_solution.calculate_value()
@@ -79,6 +82,7 @@ def grasp(instance, start_time, current_time):
         if (global_improvement * optimization_sense) > 0:
             best_solution = copy.copy(current_solution)
             best_value = current_value
+            print 'Best solution objective value in', str(current_time - start_time) + 's:', best_value
         
         # Store historic data
         value_history.append(current_value)
@@ -90,7 +94,10 @@ def grasp(instance, start_time, current_time):
         
         current_time = time()
     
+    print 'End of GRASP.'
+    print 'final solution objective value:', best_solution.calculate_value()
     best_solution.polish()
+    print 'polished solution objective value:', best_solution.calculate_value()
     
     report_value = best_solution.calculate_report_value()
     return (best_solution, report_value, value_history, best_value_history, None, None, it)
@@ -122,6 +129,10 @@ def tabu_search(instance, start_time, current_time):
     
     tabu_list = []
     tabu_tenure = instance.get_tabu_tenure()
+    
+    print '>> Starting tabu search...'
+    print 'expected_num_iterations', expected_num_iterations
+    print 'initial solution objective value:', best_value
     
     # Start local search
     while (current_time - start_time) < TIME_LIMIT:
@@ -180,6 +191,7 @@ def tabu_search(instance, start_time, current_time):
             last_improvement_iteration = it
             best_solution = copy.copy(current_solution)
             best_value = current_value
+            print 'best_value', best_value, 'report_value', best_solution.calculate_report_value()
             distance_from_best_value = 0
         else:
             distance_from_best_value = abs(global_improvement)
@@ -189,7 +201,10 @@ def tabu_search(instance, start_time, current_time):
         
         current_time = time()
     
+    print 'End of tabu search.'
+    print 'final solution objective value:', best_solution.calculate_value()
     best_solution.polish()
+    print 'polished solution objective value:', best_solution.calculate_value()
     
     report_value = best_solution.calculate_report_value()
     return (best_solution, report_value, value_history, best_value_history, None, None, it)
@@ -222,6 +237,10 @@ def simulated_annealing(instance, start_time, current_time):
     
     it = 0
     last_improvement_iteration = 0
+    
+    print '>> Starting simulated annealing...'
+    print 'expected_num_iterations', expected_num_iterations
+    print 'initial solution objective value:', best_value
     
     # Start simulated annealing
     while (current_time - start_time) < TIME_LIMIT:
@@ -270,13 +289,17 @@ def simulated_annealing(instance, start_time, current_time):
             last_improvement_iteration = it
             best_solution = copy.copy(current_solution)
             best_value = current_value
+            print 'best_value', best_value, 'report_value', best_solution.calculate_report_value()
             
         # Increment iteration
         it += 1
         
         current_time = time()
     
+    print 'End of simulated annealing.'
+    print 'final solution objective value:', best_solution.calculate_value()
     best_solution.polish()
+    print 'polished solution objective value:', best_solution.calculate_value()
     
     report_value = best_solution.calculate_report_value()
     return (best_solution, report_value, value_history, best_value_history, T_history, P_history, it)
@@ -341,7 +364,7 @@ def main(algorithm, algorithm_name, problem):
                 if best_results == None or (global_improvement * optimization_sense) > 0:
                     best_results = results
                     global_best_value = best_value
-                    print global_best_value
+                    print 'Best solution in', str(current_time - start_time) + 's:', global_best_value
                     
                     # Stopping condition
                     if (opt_value != None):
