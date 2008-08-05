@@ -150,8 +150,12 @@ class DSPInstance():
         return solution
     
     
-    def generate_all_moves(self):
-        return range(self.num_vertices)
+    def all_moves_generator(self):
+        moves = range(self.num_vertices)
+        random.shuffle(moves)
+        while True:
+            random.shuffle(moves)
+            yield moves
 
 
 class DSPSolution():
@@ -278,13 +282,13 @@ class DSPSolution():
         """
         
         # Generate all possible moves
-        moves = self.instance.generate_all_moves()
+        all_moves = self.instance.all_moves_generator().next
         
         # Start local search
         improving = True
         while improving:
             improving = False
-            for move in moves:
+            for move in all_moves():
                 delta = self.calculate_move_delta(move)
                 
                 # If the neighbor solution is better, move to it

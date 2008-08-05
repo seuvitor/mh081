@@ -375,8 +375,11 @@ class CVRPInstance():
         return solution
     
     
-    def generate_all_moves(self):
-        return range(1, self.num_vertices)
+    def all_moves_generator(self):
+        moves = range(1, self.num_vertices)
+        random.shuffle(moves)
+        while True:
+            yield moves
 
 
 class CVRPSolution():

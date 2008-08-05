@@ -267,7 +267,7 @@ class TSPInstance():
         return solution
     
     
-    def generate_all_moves(self):
+    def all_moves_generator(self):
         size = self.num_vertices
         
         moves = []
@@ -278,7 +278,8 @@ class TSPInstance():
                 moves.append((i, j))
         
         random.shuffle(moves)
-        return moves
+        while True:
+            yield moves
 
 
 class TSPSolution():

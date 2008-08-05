@@ -53,7 +53,7 @@ def grasp(instance, start_time, current_time):
     best_value = current_value
     
     # Generate all possible moves
-    moves = instance.generate_all_moves()
+    all_moves = instance.all_moves_generator().next
 
     it = 0
     while (current_time - start_time) < TIME_LIMIT:
@@ -66,7 +66,7 @@ def grasp(instance, start_time, current_time):
         # Start local search
         while improving and (current_time - start_time) < TIME_LIMIT:
             improving = False
-            for move in moves:
+            for move in all_moves():
                 delta = current_solution.calculate_move_delta(move)
                 
                 # If the neighbour solution is better, move to it
@@ -124,8 +124,7 @@ def tabu_search(instance, start_time, current_time):
     last_improvement_iteration = 0
     
     # Generate all possible moves
-    moves = instance.generate_all_moves()
-    random.shuffle(moves)
+    all_moves = instance.all_moves_generator().next
     
     tabu_list = []
     tabu_tenure = instance.get_tabu_tenure()
@@ -149,7 +148,7 @@ def tabu_search(instance, start_time, current_time):
         best_move = None
         best_move_delta = -(INFINITY * optimization_sense)
         
-        for move in moves:
+        for move in all_moves():
             delta = current_solution.calculate_move_delta(move)
             
             # If the neighbour solution is better than the current, move to it

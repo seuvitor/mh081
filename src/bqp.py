@@ -175,10 +175,11 @@ class BQPInstance():
         return self.generate_random_solution()
     
     
-    def generate_all_moves(self):
+    def all_moves_generator(self):
         moves = range(self.num_vars)
         random.shuffle(moves)
-        return moves
+        while True:
+            yield moves
     
     
 class BQPSolution():

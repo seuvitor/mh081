@@ -171,9 +171,9 @@ class UCTPInstance:
     
     def generate_greedy_randomized_solution(self, k):
         return self.generate_random_solution()
-
-
-    def generate_all_moves(self):
+    
+    
+    def all_moves_generator(self):
         moves = []
         
         # Generate all moves of type INS
@@ -193,8 +193,10 @@ class UCTPInstance:
         random.shuffle(swap_moves)
         moves.extend(swap_moves)
         
-        return moves
-
+        while True:
+            yield moves
+    
+    
     # Hopcroft-Karp bipartite max-cardinality matching and max independent set
     # David Eppstein, UC Irvine, 27 Apr 2002
     def bipartite_match(self, graph):

@@ -174,10 +174,11 @@ class GCPInstance():
         return solution
     
     
-    def generate_all_moves(self):
+    def all_moves_generator(self):
         moves = range(self.num_vertices)
         random.shuffle(moves)
-        return moves
+        while True:
+            yield moves
     
     
 class GCPSolution():
